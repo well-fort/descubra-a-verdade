@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Descubra a Verdade · Plantão de checagem</title>
+<meta name="description" content="Descubra a Verdade: experiência interativa de letramento crítico em IA. Analise fotos de reportagens e descubra quais são reais e quais foram alteradas com IA generativa." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23111417'/%3E%3Crect x='10' y='14' width='44' height='32' fill='%23f6f3ec'/%3E%3Cpath d='M14 40 L26 26 L34 34 L40 28 L50 40 Z' fill='%233aa6dd'/%3E%3Cpath d='M20 52 L28 58 L46 44' fill='none' stroke='%23d63b2f' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Special+Elite&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+<style>
+
+  /* ====== Variáveis & reset ====== */
+  :root {
+    --bg-deep: #111417;
+    --bg-mid: #1b2026;
+    --bg-soft: #262d35;
+    --paper: #f6f3ec;
+    --paper-fold: #cfcabd;
+    --ink: #141414;
+    --ink-soft: #45433e;
+    --amber: #3aa6dd;
+    --amber-deep: #1f7fb3;
+    --amber-soft: #7cc6ee;
+    --red: #d63b2f;
+    --red-deep: #a3261c;
+    --red-soft: #e96a5f;
+    --green: #2e8f55;
+    --green-soft: #55b87d;
+    --shadow: 0 12px 30px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100vh; width: 100vw; overflow: hidden; }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: var(--bg-deep);
+    color: var(--paper);
+    position: relative;
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(58, 166, 221, 0.08), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(214, 59, 47, 0.07), transparent 45%);
+    z-index: 0;
+  }
+
+  body::after {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.9 0 0 0 0 0.9 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.35; mix-blend-mode: overlay; z-index: 1;
+  }
+
+  .app { position: relative; z-index: 2; height: 100vh; display: flex; flex-direction: column; }
+  .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+  .typewriter { font-family: 'Special Elite', 'Courier New', monospace; }
+
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ============================================================ TELA BRIEFING ============================================================ */
+  #screen-briefing { align-items: center; justify-content: center; padding: 24px; }
+
+  .briefing {
+    width: 100%; max-width: 560px;
+    background: var(--paper); color: var(--ink);
+    border-radius: 4px; padding: 32px 36px 28px;
+    position: relative; box-shadow: var(--shadow);
+    background-image: repeating-linear-gradient(0deg, transparent 0, transparent 28px, rgba(40, 40, 40, 0.05) 28px, rgba(40, 40, 40, 0.05) 29px);
+  }
+  .briefing::before {
+    content: "CHECAGEM · CHECAGEM · CHECAGEM · CHECAGEM · CHECAGEM";
+    position: absolute; top: -16px; left: -10px; right: -10px;
+    background: var(--amber); color: var(--ink);
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.3em;
+    padding: 6px 12px; text-align: center; transform: rotate(-1deg);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    overflow: hidden; white-space: nowrap;
+  }
+  .case-id { font-family: 'Special Elite', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.15em; margin-bottom: 12px; margin-top: 6px; }
+  .briefing h1 { font-family: 'Bebas Neue', sans-serif; font-size: 64px; line-height: 0.9; letter-spacing: 0.02em; color: var(--ink); margin-bottom: 4px; }
+  .briefing h1 .ia { color: var(--red); }
+  .briefing .subtitle { font-family: 'Special Elite', monospace; font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; border-bottom: 1px dashed var(--ink-soft); padding-bottom: 10px; }
+  .briefing-intro { font-size: 14px; line-height: 1.55; margin-bottom: 22px; color: var(--ink); }
+  .briefing-intro strong { color: var(--red-deep); }
+
+  .team-inputs { display: grid; gap: 12px; margin-bottom: 22px; }
+  .team-field { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: rgba(0,0,0,0.04); border-left: 4px solid var(--amber); }
+  .team-field.team-b { border-left-color: var(--red); }
+  .team-label { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; min-width: 80px; }
+  .team-field input { flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--ink-soft); font-family: 'Special Elite', monospace; font-size: 15px; color: var(--ink); padding: 4px 4px; outline: none; }
+  .team-field input:focus { border-bottom-color: var(--red); }
+
+  .stamp-btn {
+    background: var(--ink); color: var(--paper); border: none;
+    padding: 16px 32px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.2em;
+    cursor: pointer; width: 100%;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 4px 0 var(--ink-soft), 0 6px 14px rgba(0,0,0,0.25);
+  }
+  .stamp-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink-soft), 0 10px 18px rgba(0,0,0,0.3); }
+  .stamp-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink-soft); }
+
+  .footer-hint { text-align: center; margin-top: 18px; font-family: 'Special Elite', monospace; font-size: 11px; color: rgba(246, 243, 236, 0.4); letter-spacing: 0.1em; }
+
+  /* ============================================================ TELA JOGO ============================================================ */
+  #screen-game { padding: 0; }
+
+  .app-header {
+    height: 56px;
+    display: grid; grid-template-columns: 200px 1fr 200px; align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px dashed rgba(246, 243, 236, 0.18);
+    background: var(--bg-mid); flex-shrink: 0;
+  }
+  .header-btn {
+    background: transparent; color: var(--paper);
+    border: 1px solid rgba(246, 243, 236, 0.3); padding: 8px 14px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.12em;
+    cursor: pointer; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .header-btn:hover { background: rgba(246, 243, 236, 0.08); border-color: var(--amber); }
+  .header-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .header-btn:disabled:hover { background: transparent; border-color: rgba(246, 243, 236, 0.3); }
+  .header-center { display: flex; align-items: baseline; justify-content: center; gap: 16px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.15em; color: var(--amber); }
+  .logo .ia { color: var(--red); }
+  .case-counter { font-family: 'Special Elite', monospace; font-size: 12px; color: rgba(246, 243, 236, 0.65); letter-spacing: 0.12em; }
+  .right-controls { display: flex; justify-content: flex-end; }
+
+  .game-main {
+    flex: 1;
+    display: grid; grid-template-columns: 220px 1fr 220px; gap: 16px;
+    padding: 16px 20px; overflow: hidden;
+  }
+
+  /* Painel de equipe */
+  .team-panel {
+    background: var(--bg-mid); border: 1px solid rgba(246, 243, 236, 0.1); border-radius: 4px;
+    padding: 16px 14px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: relative; transition: all 0.3s ease;
+  }
+  .team-panel.team-a { border-top: 4px solid var(--amber); }
+  .team-panel.team-b { border-top: 4px solid var(--red); }
+  .team-panel.active.team-a { background: linear-gradient(180deg, rgba(58, 166, 221, 0.18) 0%, var(--bg-mid) 60%); box-shadow: 0 0 0 2px var(--amber), 0 0 24px rgba(58, 166, 221, 0.3); }
+  .team-panel.active.team-b { background: linear-gradient(180deg, rgba(214, 59, 47, 0.18) 0%, var(--bg-mid) 60%); box-shadow: 0 0 0 2px var(--red), 0 0 24px rgba(214, 59, 47, 0.3); }
+
+  .team-tag { font-family: 'Special Elite', monospace; font-size: 11px; color: rgba(246, 243, 236, 0.5); letter-spacing: 0.2em; margin-bottom: 12px; }
+  .score-block { margin-bottom: 14px; line-height: 1; }
+  .score-num { font-family: 'Bebas Neue', sans-serif; font-size: 76px; color: var(--paper); transition: color 0.4s ease, transform 0.4s ease; }
+  .team-a .score-num.boost { color: var(--amber-soft); transform: scale(1.15); }
+  .team-b .score-num.boost { color: var(--red-soft); transform: scale(1.15); }
+  .score-max { font-family: 'Special Elite', monospace; font-size: 14px; color: rgba(246, 243, 236, 0.5); margin-top: -4px; }
+
+  .progress-wrap { width: 100%; margin-bottom: 16px; }
+  .progress-bar { width: 100%; height: 12px; background: rgba(0,0,0,0.35); border: 1px solid rgba(246, 243, 236, 0.15); border-radius: 2px; position: relative; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; transition: width 0.7s cubic-bezier(0.65, 0, 0.35, 1); background-image: repeating-linear-gradient(45deg, currentColor 0, currentColor 6px, rgba(0,0,0,0.15) 6px, rgba(0,0,0,0.15) 8px); }
+  .team-a .progress-fill { color: var(--amber); }
+  .team-b .progress-fill { color: var(--red); }
+  .progress-ticks { display: flex; justify-content: space-between; margin-top: 4px; font-family: 'Special Elite', monospace; font-size: 9px; color: rgba(246, 243, 236, 0.4); }
+
+  .team-name { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.05em; line-height: 1.05; color: var(--paper); margin-bottom: 12px; word-break: break-word; min-height: 28px; }
+  .turn-badge { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.18em; padding: 6px 12px; opacity: 0; transition: opacity 0.3s ease; border-radius: 2px; }
+  .team-panel.active .turn-badge { opacity: 1; animation: pulseBadge 1.6s ease-in-out infinite; }
+  .team-a .turn-badge { background: var(--amber); color: var(--ink); }
+  .team-b .turn-badge { background: var(--red); color: var(--paper); }
+  @keyframes pulseBadge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  /* Dossiê */
+  .dossier-area { display: flex; align-items: stretch; justify-content: center; overflow: hidden; }
+  .dossier {
+    width: 100%; max-width: 720px;
+    background: var(--paper); color: var(--ink);
+    border-radius: 4px; padding: 20px 26px 18px;
+    box-shadow: var(--shadow); position: relative;
+    background-image: repeating-linear-gradient(0deg, transparent 0, transparent 28px, rgba(40, 40, 40, 0.05) 28px, rgba(40, 40, 40, 0.05) 29px);
+    display: flex; flex-direction: column;
+  }
+  .dossier::before { content: ""; position: absolute; top: -7px; left: 28px; width: 70px; height: 16px; background: rgba(40, 40, 40, 0.45); border-radius: 2px; transform: rotate(-2deg); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  .dossier-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--ink-soft); }
+  .dossier-id { font-family: 'Special Elite', monospace; font-size: 12px; letter-spacing: 0.18em; color: var(--ink-soft); }
+  .dossier-status { font-family: 'Special Elite', monospace; font-size: 10px; letter-spacing: 0.15em; color: var(--red-deep); border: 1px solid var(--red-deep); padding: 2px 8px; transform: rotate(-1deg); }
+
+  .phase { flex: 1; display: flex; flex-direction: column; }
+  .phase[hidden] { display: none; }
+
+  .product-row { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; }
+  .product-visual {
+    width: 110px; height: 110px;
+    background: rgba(0,0,0,0.06); border: 1px dashed var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px; flex-shrink: 0; overflow: hidden;
+    position: relative;
+  }
+  .product-visual img { width: 100%; height: 100%; object-fit: cover; }
+  .product-visual .product-emoji { font-size: 56px; }
+  .product-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1.05; color: var(--ink); letter-spacing: 0.02em; flex: 1; }
+
+  .section-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.2em; color: var(--red-deep); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .section-label::before { content: "▸"; color: var(--amber-deep); }
+  .pitch-quote {
+    font-family: 'Special Elite', monospace; font-size: 15px; line-height: 1.5; color: var(--ink);
+    padding: 10px 16px; background: rgba(58, 166, 221, 0.18); border-left: 4px solid var(--amber);
+    position: relative; flex: 1; margin-bottom: 12px;
+  }
+  .pitch-quote::before { content: "“"; position: absolute; left: 4px; top: -8px; font-size: 30px; color: var(--amber-deep); font-family: serif; }
+
+  .verdict-prompt { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.1em; color: var(--ink); text-align: center; margin-bottom: 8px; }
+  .verdict-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .verdict-btn { padding: 14px 10px; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.12em; cursor: pointer; border: 2px solid var(--ink); transition: all 0.15s ease; background: var(--paper); color: var(--ink); }
+  .verdict-btn.yes:hover { background: var(--green); color: var(--paper); border-color: var(--green); }
+  .verdict-btn.no:hover { background: var(--red); color: var(--paper); border-color: var(--red); }
+  .verdict-btn:active { transform: scale(0.97); }
+
+  /* Revelação */
+  .verdict-stamp { display: inline-block; align-self: center; font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.15em; padding: 6px 18px; border: 4px double currentColor; transform: rotate(-3deg); margin-bottom: 10px; animation: stampPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .verdict-stamp.correct { color: var(--green); }
+  .verdict-stamp.wrong { color: var(--red); }
+  @keyframes stampPop { 0% { transform: rotate(-25deg) scale(2.2); opacity: 0; } 60% { transform: rotate(0) scale(0.9); opacity: 1; } 100% { transform: rotate(-3deg) scale(1); opacity: 1; } }
+
+  .correct-answer { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; color: var(--ink); flex-wrap: wrap; }
+  .ca-tag { background: var(--ink); color: var(--paper); padding: 3px 12px; }
+  .ca-points { background: var(--green); color: var(--paper); padding: 3px 10px; font-size: 16px; }
+  .ca-points.minus { background: var(--red); }
+
+  .revelation-text { font-size: 14px; line-height: 1.55; color: var(--ink); margin-bottom: 12px; background: rgba(0,0,0,0.03); padding: 10px 14px; border-left: 3px solid var(--ink-soft); flex: 1; }
+
+  .next-btn { background: var(--ink); color: var(--paper); border: none; padding: 13px 24px; font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 0.18em; cursor: pointer; box-shadow: 0 3px 0 var(--ink-soft); width: 100%; transition: all 0.12s ease; }
+  .next-btn:hover { transform: translateY(-1px); }
+  .next-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink-soft); }
+
+  /* ============================================================ TELA FIM ============================================================ */
+  #screen-closed { align-items: center; justify-content: center; padding: 24px; }
+  .closed-screen { text-align: center; max-width: 560px; }
+  .case-closed-stamp { font-family: 'Bebas Neue', sans-serif; font-size: 68px; color: var(--red); border: 6px double var(--red); padding: 14px 32px; display: inline-block; transform: rotate(-4deg); margin-bottom: 26px; letter-spacing: 0.08em; animation: stampIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes stampIn { 0% { transform: rotate(-30deg) scale(2.5); opacity: 0; } 60% { transform: rotate(0deg) scale(0.9); opacity: 1; } 100% { transform: rotate(-4deg) scale(1); opacity: 1; } }
+  .winner-block { background: var(--paper); color: var(--ink); padding: 20px 24px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .winner-label { font-family: 'Special Elite', monospace; font-size: 12px; letter-spacing: 0.2em; color: var(--ink-soft); margin-bottom: 4px; }
+  .winner-name { font-family: 'Bebas Neue', sans-serif; font-size: 38px; line-height: 1; color: var(--ink); margin-bottom: 6px; }
+  .winner-score { font-family: 'Special Elite', monospace; font-size: 14px; color: var(--red-deep); margin-bottom: 8px; }
+  .winner-title { font-family: 'Special Elite', monospace; font-size: 14px; color: var(--red-deep); }
+  .closing-question { background: var(--bg-mid); border: 1px dashed var(--amber); padding: 16px 22px; margin-bottom: 20px; text-align: left; }
+  .closing-question .q-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.2em; color: var(--amber); margin-bottom: 6px; }
+  .closing-question .q-text { font-family: 'Special Elite', monospace; font-size: 15px; line-height: 1.5; color: var(--paper); }
+  .restart-btn { background: var(--amber); color: var(--ink); border: none; padding: 14px 32px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.18em; cursor: pointer; box-shadow: 0 4px 0 var(--amber-deep); }
+  .restart-btn:hover { transform: translateY(-2px); }
+  .restart-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--amber-deep); }
+
+  /* ============================================================ MODALS ============================================================ */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px; animation: fadeIn 0.25s ease-out; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 26px 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); max-width: 560px; width: 100%; position: relative; background-image: repeating-linear-gradient(0deg, transparent 0, transparent 28px, rgba(40, 40, 40, 0.05) 28px, rgba(40, 40, 40, 0.05) 29px); animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); max-height: 88vh; overflow-y: auto; }
+  @keyframes modalPop { from { transform: scale(0.92) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+  .modal-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px dashed var(--ink-soft); }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.1em; color: var(--ink); }
+  .modal-subtitle { font-family: 'Special Elite', monospace; font-size: 12px; color: var(--ink-soft); letter-spacing: 0.15em; }
+  .modal-body { font-size: 14px; line-height: 1.55; color: var(--ink); }
+  .modal-body p { margin-bottom: 10px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-btn { flex: 1; padding: 12px 16px; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.14em; cursor: pointer; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); transition: all 0.15s ease; }
+  .modal-btn:hover { background: var(--ink); color: var(--paper); }
+  .modal-btn.primary { background: var(--ink); color: var(--paper); }
+  .modal-btn.primary:hover { background: var(--red-deep); border-color: var(--red-deep); }
+  .modal-btn.danger:hover { background: var(--red); border-color: var(--red); color: var(--paper); }
+
+  .review-tag { display: inline-block; background: var(--amber); color: var(--ink); padding: 3px 10px; font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.15em; margin-bottom: 8px; }
+  .review-product { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .review-icon { width: 54px; height: 54px; background: rgba(0,0,0,0.06); border: 1px dashed var(--ink-soft); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; }
+  .review-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .review-product-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--ink); }
+  .review-pitch { font-family: 'Special Elite', monospace; font-size: 14px; background: rgba(58, 166, 221, 0.15); border-left: 3px solid var(--amber); padding: 10px 12px; margin-bottom: 10px; }
+  .review-answer-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.08em; align-items: center; }
+  .review-answer-row .tag { background: var(--ink); color: var(--paper); padding: 2px 10px; }
+  .review-answer-row .tag.correct-mark { background: var(--green); }
+  .review-answer-row .tag.wrong-mark { background: var(--red); }
+  .review-explanation { font-size: 13px; line-height: 1.5; background: rgba(0,0,0,0.03); border-left: 3px solid var(--ink-soft); padding: 10px 12px; margin-bottom: 12px; }
+  .review-sources { background: rgba(58, 166, 221, 0.1); border-left: 3px solid var(--amber-deep); padding: 10px 12px; }
+  .review-sources-label { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.18em; color: var(--red-deep); margin-bottom: 6px; }
+  .review-sources ul { list-style: none; padding-left: 0; }
+  .review-sources li { font-family: 'Special Elite', monospace; font-size: 12px; margin-bottom: 4px; line-height: 1.4; }
+  .review-sources a { color: var(--red-deep); text-decoration: underline; }
+  .review-sources a:hover { color: var(--ink); }
+
+  /* Responsivo */
+  @media (max-height: 720px) {
+    .score-num { font-size: 64px; }
+    .team-name { font-size: 20px; }
+    .dossier { padding: 16px 22px 14px; }
+    .product-visual { width: 90px; height: 90px; }
+    .product-visual .product-emoji { font-size: 44px; }
+    .product-name { font-size: 22px; }
+    .pitch-quote { font-size: 14px; padding: 9px 14px; }
+    .revelation-text { font-size: 13px; padding: 9px 12px; }
+  }
+  @media (max-width: 1100px) {
+    .game-main { grid-template-columns: 180px 1fr 180px; gap: 12px; padding: 12px 14px; }
+    .score-num { font-size: 60px; }
+    .team-name { font-size: 20px; }
+  }
+
+  /* ============================================================
+     v4 · Ajustes de layout (rolagem e celular) e novos componentes
+     ============================================================ */
+  html, body { height: auto; min-height: 100%; width: 100%; overflow-x: hidden; overflow-y: auto; }
+  .app { height: auto; min-height: 100vh; min-height: 100dvh; }
+  .screen.active { min-height: 100vh; min-height: 100dvh; }
+  .game-main { overflow: visible; grid-template-columns: 220px minmax(0, 1fr) 220px; }
+  .dossier-area { overflow: visible; }
+  button { font-family: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  /* ---------- Tela inicial ---------- */
+  #screen-briefing { padding: 44px 16px 28px; }
+  .prof-link { position: absolute; top: 12px; right: 14px; z-index: 5; background: transparent; color: rgba(246,243,236,0.75); border: 1px solid rgba(246,243,236,0.3); padding: 7px 12px; font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.12em; cursor: pointer; }
+  .prof-link:hover { border-color: var(--amber); color: var(--paper); }
+
+  .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 16px; border: 2px solid var(--ink); }
+  .mode-btn { background: transparent; border: none; padding: 12px 8px; cursor: pointer; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.12em; color: var(--ink); line-height: 1.1; }
+  .mode-btn small { display: block; font-family: 'Special Elite', monospace; font-size: 10.5px; letter-spacing: 0.04em; color: var(--ink-soft); margin-top: 3px; }
+  .mode-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .mode-btn[aria-pressed="true"] small { color: var(--amber-soft); }
+
+  .team-inputs { margin-bottom: 14px; }
+  .team-field.neutral { border-left-color: var(--ink-soft); }
+  .team-field select { flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--ink-soft); font-family: 'Special Elite', monospace; font-size: 15px; color: var(--ink); padding: 4px; outline: none; }
+  .team-label { min-width: 92px; }
+  .field-note { font-family: 'Special Elite', monospace; font-size: 11px; color: var(--ink-soft); line-height: 1.45; margin: -4px 0 14px; }
+  .resume-btn { width: 100%; margin-top: 10px; background: transparent; border: 2px dashed var(--ink-soft); color: var(--ink); padding: 10px 14px; cursor: pointer; font-family: 'Special Elite', monospace; font-size: 13px; }
+  .resume-btn:hover { border-color: var(--red); color: var(--red-deep); }
+  .bank-status { text-align: center; margin-top: 8px; font-family: 'Special Elite', monospace; font-size: 10.5px; color: rgba(246,243,236,0.4); letter-spacing: 0.08em; }
+  .stamp-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ---------- Jogo ---------- */
+  .timer-chip { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.1em; color: var(--ink); background: var(--amber); padding: 2px 10px; border-radius: 2px; min-width: 62px; text-align: center; }
+  .timer-chip.low { background: var(--red); color: var(--paper); animation: pulseBadge 1s ease-in-out infinite; }
+  .solo-stats { font-family: 'Special Elite', monospace; font-size: 13px; color: rgba(246,243,236,0.75); letter-spacing: 0.06em; }
+  body.modo-individual .game-main { grid-template-columns: 240px minmax(0, 1fr); }
+  body.modo-individual #panel-b { display: none; }
+  body.modo-individual .turn-badge { display: none; }
+  body:not(.modo-individual) .solo-stats { display: none; }
+
+  .dossier { min-height: 440px; }
+  .pitch-quote { flex: 0 1 auto; }
+  .hint-zone { margin-bottom: 12px; }
+  .hint-btn { background: transparent; border: 1px dashed var(--ink-soft); color: var(--ink); padding: 8px 12px; cursor: pointer; font-family: 'Special Elite', monospace; font-size: 12.5px; width: 100%; text-align: left; }
+  .hint-btn:hover { border-color: var(--red); background: rgba(214,59,47,0.06); }
+  .hint-box { background: rgba(31,127,179,0.10); border-left: 4px solid #1f7fb3; padding: 9px 12px; font-size: 13.5px; line-height: 1.5; }
+  .hint-box b { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.14em; font-weight: 400; color: #1f7fb3; margin-right: 6px; }
+  .verdict-zone { margin-top: auto; }
+  .verdict-stamp.timeout { color: var(--amber-deep); }
+  .ca-points.zero { background: var(--ink-soft); }
+  .revelation-text { flex: 0 1 auto; }
+  .fontes-inline { margin-bottom: 12px; font-size: 12.5px; }
+  .fontes-inline summary { cursor: pointer; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.16em; font-size: 13px; color: var(--red-deep); }
+  .fontes-inline ul { list-style: none; margin-top: 6px; }
+  .fontes-inline li { font-family: 'Special Elite', monospace; margin-bottom: 4px; line-height: 1.4; }
+  .fontes-inline a { color: var(--red-deep); }
+  .next-btn { margin-top: auto; }
+
+  /* ---------- Encerramento ---------- */
+  #screen-closed { padding: 28px 16px; }
+  .closed-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .ghost-btn { background: transparent; color: var(--paper); border: 2px solid var(--amber); padding: 12px 24px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.18em; cursor: pointer; }
+  .ghost-btn:hover { background: rgba(58,166,221,0.15); }
+  .save-status { font-family: 'Special Elite', monospace; font-size: 12px; color: rgba(246,243,236,0.6); margin-top: 16px; line-height: 1.5; }
+
+  /* ---------- Papel largo: relatório, login, painel ---------- */
+  .paper-screen { align-items: center; padding: 28px 16px 40px; }
+  .sheet { width: 100%; max-width: 980px; background: var(--paper); color: var(--ink); border-radius: 4px; padding: 26px 28px 30px; box-shadow: var(--shadow); }
+  .sheet.narrow { max-width: 460px; margin-top: 6vh; }
+  .sheet h2 { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.06em; line-height: 1; font-weight: 400; }
+  .sheet h3 { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; font-weight: 400; margin: 18px 0 8px; color: var(--red-deep); }
+  .sheet-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; border-bottom: 1px dashed var(--ink-soft); padding-bottom: 12px; margin-bottom: 14px; }
+  .sheet-sub { font-family: 'Special Elite', monospace; font-size: 12px; color: var(--ink-soft); margin-top: 6px; line-height: 1.5; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn { background: var(--paper); color: var(--ink); border: 2px solid var(--ink); padding: 8px 14px; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.12em; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  .btn.primary:hover { background: var(--red-deep); border-color: var(--red-deep); }
+  .btn.danger { border-color: var(--red-deep); color: var(--red-deep); }
+  .btn.danger:hover, .btn.danger.armed { background: var(--red); border-color: var(--red); color: var(--paper); }
+  .btn.small { padding: 4px 9px; font-size: 13px; }
+  .btn:disabled { opacity: 0.5; cursor: wait; }
+  .notice { background: rgba(58,166,221,0.2); border-left: 4px solid var(--amber-deep); padding: 10px 14px; font-size: 13.5px; line-height: 1.5; margin-bottom: 14px; }
+  .notice.err { background: rgba(214,59,47,0.12); border-left-color: var(--red); }
+  .notice.ok { background: rgba(46,143,85,0.14); border-left-color: var(--green); }
+  .notice code { font-family: 'Special Elite', monospace; background: rgba(0,0,0,0.07); padding: 1px 5px; word-break: break-all; }
+
+  .form-field { display: block; margin-bottom: 12px; }
+  .form-field > span { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.12em; margin-bottom: 4px; }
+  .form-field small { display: block; font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.4; }
+  .form-field input[type="text"], .form-field input[type="email"], .form-field input[type="password"], .form-field input[type="number"], .form-field select, .form-field textarea, .inline-input {
+    width: 100%; background: #fffdf8; border: 1px solid var(--ink-soft); border-radius: 2px; padding: 8px 10px; font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; color: var(--ink); }
+  .form-field textarea { min-height: 74px; resize: vertical; line-height: 1.45; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .check-field { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 12px; }
+  .fonte-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-bottom: 6px; }
+  .img-preview { width: 64px; height: 64px; border: 1px dashed var(--ink-soft); display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; flex-shrink: 0; background: rgba(0,0,0,0.05); }
+  .img-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .img-row { display: flex; gap: 10px; align-items: flex-start; }
+  .img-row .form-field { flex: 1; }
+
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); margin-bottom: 16px; }
+  .tab { background: transparent; border: 2px solid transparent; border-bottom: none; padding: 8px 14px; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.12em; cursor: pointer; color: var(--ink-soft); }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .table-wrap { overflow-x: auto; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.data th { text-align: left; font-family: 'Bebas Neue', sans-serif; font-weight: 400; letter-spacing: 0.12em; font-size: 13px; padding: 7px 8px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+  table.data td { padding: 7px 8px; border-bottom: 1px dashed rgba(40,40,40,0.35); vertical-align: middle; }
+  table.data tr.off td { opacity: 0.45; }
+  .pill { display: inline-block; padding: 1px 8px; font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.1em; color: var(--paper); background: var(--ink); white-space: nowrap; }
+  .pill.yes { background: var(--green); } .pill.no { background: var(--red); } .pill.warn { background: var(--amber-deep); }
+  .stat-line { font-family: 'Special Elite', monospace; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  .q-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start; }
+  .modal-box.wide { max-width: 720px; }
+
+  /* ---------- Relatório ---------- */
+  .report-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .report-kpi { background: rgba(0,0,0,0.05); padding: 10px 12px; border-left: 4px solid var(--amber); }
+  .report-kpi b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 26px; font-weight: 400; line-height: 1; }
+  .report-kpi span { font-family: 'Special Elite', monospace; font-size: 11px; color: var(--ink-soft); }
+  .report-case { border-top: 1px dashed var(--ink-soft); padding: 12px 0; display: grid; grid-template-columns: 56px 1fr; gap: 12px; break-inside: avoid; }
+  .report-case .review-icon { width: 56px; height: 56px; }
+  .report-case h4 { font-family: 'Bebas Neue', sans-serif; font-size: 19px; font-weight: 400; letter-spacing: 0.03em; }
+  .report-case .meta { font-size: 12.5px; margin: 3px 0 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .report-case p { font-size: 13px; line-height: 1.5; margin-bottom: 4px; }
+  .report-case .src { font-family: 'Special Elite', monospace; font-size: 11.5px; }
+  .report-case .src a { color: var(--red-deep); }
+  .report-case .src ul { list-style: none; padding: 0; margin: 0; }
+  .report-case .src li { margin-bottom: 2px; }
+
+  /* ---------- Toast ---------- */
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--paper); padding: 10px 18px; font-family: 'Special Elite', monospace; font-size: 13px; border-left: 4px solid var(--amber); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 200; max-width: 92vw; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { border-left-color: var(--red); }
+
+  /* ---------- Celular e telas estreitas ---------- */
+  @media (max-width: 860px) {
+    .app-header { grid-template-columns: auto 1fr auto; height: auto; min-height: 52px; padding: 8px 10px; gap: 8px; }
+    .header-btn { padding: 7px 9px; font-size: 13px; }
+    .header-center { gap: 8px; flex-wrap: wrap; }
+    .logo { font-size: 18px; }
+    .game-main { grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; grid-template-areas: "a b" "d d"; padding: 10px; gap: 10px; }
+    #panel-a { grid-area: a; } #panel-b { grid-area: b; } .dossier-area { grid-area: d; }
+    body.modo-individual .game-main { grid-template-columns: 1fr; grid-template-areas: "a" "d"; }
+    .team-panel { padding: 8px 10px; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; text-align: left; }
+    .team-tag, .progress-ticks, .score-max { display: none; }
+    .score-block { margin: 0; order: 2; }
+    .score-num { font-size: 34px; }
+    .team-name { font-size: 16px; margin: 0; min-height: 0; order: 1; flex: 1 1 100%; word-break: normal; overflow-wrap: anywhere; }
+    .turn-badge { font-size: 11px; padding: 3px 7px; order: 3; }
+    .solo-stats { order: 3; font-size: 12px; }
+    .progress-wrap { order: 5; width: 100%; margin: 0; }
+    .progress-bar { height: 8px; }
+    .dossier { padding: 16px 16px 14px; min-height: 0; }
+    .product-visual { width: 84px; height: 84px; }
+    .product-name { font-size: 22px; }
+    .briefing { padding: 28px 20px 22px; }
+    .briefing h1 { font-size: 54px; }
+    .sheet { padding: 20px 16px 24px; }
+    .form-grid, .form-grid.three { grid-template-columns: 1fr; }
+    .fonte-row { grid-template-columns: 1fr; }
+    .case-closed-stamp { font-size: 46px; padding: 10px 20px; }
+  }
+  @media (max-width: 420px) {
+    .verdict-btn { font-size: 17px; padding: 14px 6px; }
+    .team-label { min-width: 74px; font-size: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* ---------- Impressão do relatório ---------- */
+  @media print {
+    body { background: #fff !important; color: #000; }
+    body::before, body::after, .no-print, .toast, .modal-overlay { display: none !important; }
+    .screen { display: none !important; }
+    #screen-report { display: block !important; padding: 0; min-height: 0; }
+    .sheet { box-shadow: none; max-width: none; padding: 0; background: #fff; }
+    a { color: #000 !important; }
+  }
+
+  /* ============================================================
+     DESCUBRA A VERDADE · foto em destaque, lupa e comparação
+     ============================================================ */
+  .briefing h1 { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-weight: 900; font-size: 46px; line-height: 0.98; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .briefing h1 .ia { color: var(--red); display: block; }
+  .logo { font-family: 'Playfair Display', Georgia, serif; font-weight: 900; font-size: 19px; letter-spacing: 0.01em; color: var(--paper); white-space: nowrap; }
+  .logo .ia { color: var(--red-soft); }
+  .credit-line { text-align: center; margin-top: 6px; font-family: 'Special Elite', monospace; font-size: 10.5px; color: rgba(246,243,236,0.45); line-height: 1.5; max-width: 560px; }
+  .dossier { max-width: 860px; }
+  .photo-frame { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 150px; padding: 0; background: #0c0f12; border: 1px solid var(--ink); cursor: zoom-in; overflow: hidden; color: var(--paper); }
+  .photo-frame img { display: block; max-width: 100%; max-height: 40vh; width: auto; height: auto; }
+  .photo-frame .product-emoji { font-size: 64px; padding: 28px; }
+  .zoom-chip { position: absolute; right: 0; bottom: 0; background: var(--ink); color: var(--paper); font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.12em; padding: 5px 10px; pointer-events: none; }
+  .photo-credit { font-family: 'Special Elite', monospace; font-size: 11px; color: var(--ink-soft); margin: 5px 0 10px; line-height: 1.4; }
+  .phase-question .product-name { flex: 0 0 auto; margin-bottom: 10px; font-size: 27px; }
+  .level-pill { background: var(--amber-deep); color: var(--paper); padding: 3px 10px; font-size: 14px; }
+  .reveal-media { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; }
+  .reveal-media.duas { grid-template-columns: 1fr 1fr; }
+  .reveal-media figure { margin: 0; min-width: 0; }
+  .reveal-media .photo-frame img { max-height: 30vh; }
+  .reveal-media.duas .photo-frame img { max-height: 26vh; }
+  .reveal-media figcaption { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.12em; margin-top: 4px; color: var(--ink); }
+  .reveal-media figcaption.alt { color: var(--red-deep); }
+  .reveal-media figcaption.orig { color: var(--green); }
+  .reveal-credit { font-family: 'Special Elite', monospace; font-size: 11px; color: var(--ink-soft); margin: -4px 0 10px; line-height: 1.45; }
+  .thumb-wide { width: 100%; max-height: 210px; background: #0c0f12; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; overflow: hidden; font-size: 40px; }
+  .thumb-wide img { display: block; max-width: 100%; max-height: 210px; }
+  .report-case { grid-template-columns: 150px 1fr; }
+  .report-case .review-icon { width: 150px; height: 100px; background: #0c0f12; border: none; }
+  .report-case .review-icon img { object-fit: contain; }
+  .img-preview { width: 96px; }
+  .lightbox { position: fixed; inset: 0; z-index: 150; background: rgba(6,8,10,0.96); display: none; flex-direction: column; }
+  .lightbox.show { display: flex; }
+  .lb-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 10px 14px; flex-wrap: wrap; }
+  .lb-label { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.14em; color: var(--paper); }
+  .lb-label.alt { color: var(--red-soft); } .lb-label.orig { color: var(--green-soft); }
+  .lb-btn { background: transparent; color: var(--paper); border: 1px solid rgba(246,243,236,0.4); padding: 8px 14px; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.12em; cursor: pointer; }
+  .lb-btn:hover { border-color: var(--amber); background: rgba(246,243,236,0.08); }
+  .lb-btn.destaque { background: var(--amber); color: var(--ink); border-color: var(--amber); }
+  .lb-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 10px 14px; cursor: zoom-out; }
+  .lb-stage.alterna { cursor: pointer; }
+  .lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  @media (max-width: 860px) {
+    .logo { font-size: 15px; }
+    .briefing h1 { font-size: 38px; }
+    .photo-frame img { max-height: 38vh; }
+    .reveal-media.duas { grid-template-columns: 1fr; }
+    .report-case { grid-template-columns: 96px 1fr; }
+    .report-case .review-icon { width: 96px; height: 64px; }
+  }
+  @media print {
+    .lightbox { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ====== TELA INICIAL ====== -->
+  <section id="screen-briefing" class="screen active">
+    <button class="prof-link" id="btn-area-prof" type="button">🔒 Área do professor</button>
+    <div class="briefing">
+      <div class="case-id">EDIÇÃO Nº 001 · PLANTÃO DE CHECAGEM · CONFIRA ANTES DE PUBLICAR</div>
+      <h1>Descubra a <span class="ia">Verdade</span></h1>
+      <p class="subtitle">Agência de checagem · Plantão em andamento</p>
+      <p class="briefing-intro">
+        Atenção, checadores. Chegaram à redação fotos de reportagens. Algumas são
+        <strong>reais</strong>, do jeito que foram publicadas. Outras foram
+        <strong>alteradas com IA generativa</strong>. Seu trabalho: <strong>verificar cada imagem
+        antes de publicar</strong>.
+      </p>
+
+      <div class="mode-toggle" role="group" aria-label="Modo da checagem">
+        <button type="button" class="mode-btn" id="mode-individual" aria-pressed="true">Individual<small>um checador, no seu ritmo</small></button>
+        <button type="button" class="mode-btn" id="mode-equipes" aria-pressed="false">Duas equipes<small>disputa em sala</small></button>
+      </div>
+
+      <div class="team-inputs">
+        <div class="team-field" id="field-solo">
+          <label class="team-label" for="input-solo">Apelido</label>
+          <input id="input-solo" type="text" maxlength="20" placeholder="Checador(a)" autocomplete="off" />
+        </div>
+        <div class="team-field" id="field-team-a" hidden>
+          <label class="team-label" for="input-team-a">Equipe A</label>
+          <input id="input-team-a" type="text" maxlength="20" value="Equipe Lente" autocomplete="off" />
+        </div>
+        <div class="team-field team-b" id="field-team-b" hidden>
+          <label class="team-label" for="input-team-b">Equipe B</label>
+          <input id="input-team-b" type="text" maxlength="20" value="Equipe Foco" autocomplete="off" />
+        </div>
+        <div class="team-field neutral">
+          <label class="team-label" for="input-turma">Turma</label>
+          <input id="input-turma" type="text" maxlength="20" placeholder="código (opcional)" autocomplete="off" />
+        </div>
+        <div class="team-field neutral">
+          <label class="team-label" for="select-tempo">Tempo</label>
+          <select id="select-tempo">
+            <option value="0">Sem cronômetro</option>
+            <option value="30">30 segundos por imagem</option>
+            <option value="45">45 segundos por imagem</option>
+            <option value="60">60 segundos por imagem</option>
+            <option value="90">90 segundos por imagem</option>
+          </select>
+        </div>
+      </div>
+      <p class="field-note">Use apelido, não o nome completo. O resultado só é registrado para o professor se houver código de turma.</p>
+
+      <button class="stamp-btn" id="btn-start" type="button" disabled>Carregando imagens…</button>
+      <button class="resume-btn" id="btn-resume" type="button" hidden></button>
+      <p class="footer-hint" id="footer-hint" style="color: var(--ink-soft);"></p>
+    </div>
+    <p class="bank-status" id="bank-status"></p>
+    <p class="credit-line">Fotos: Agência Brasil (licença CC BY 3.0 BR), via Wikimedia Commons. As versões alteradas foram produzidas com IA generativa apenas para esta atividade educativa.</p>
+  </section>
+
+  <!-- ====== TELA DA CHECAGEM ====== -->
+  <section id="screen-game" class="screen">
+    <header class="app-header">
+      <button class="header-btn" id="btn-home" type="button">⌂ Início</button>
+      <div class="header-center">
+        <span class="logo">Descubra a <span class="ia">Verdade</span></span>
+        <span class="case-counter" id="case-counter">IMAGEM 01</span>
+        <span class="timer-chip" id="timer-chip" hidden aria-live="off">0:00</span>
+      </div>
+      <div class="right-controls">
+        <button class="header-btn" id="back-btn" type="button" disabled>◀ Anterior</button>
+      </div>
+    </header>
+
+    <main class="game-main">
+      <aside class="team-panel team-a" id="panel-a">
+        <div class="team-tag" id="tag-a">EQUIPE A</div>
+        <div class="score-block">
+          <div class="score-num" id="score-a">0</div>
+          <div class="score-max" id="max-a">/ 100 pts</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" id="progress-a" style="width: 0%"></div></div>
+          <div class="progress-ticks" id="ticks-a"><span>0</span><span>50</span><span>100</span></div>
+        </div>
+        <div class="team-name" id="name-a">Equipe Lente</div>
+        <div class="turn-badge">▶ SUA VEZ</div>
+        <div class="solo-stats" id="solo-stats">Acertos: 0 de 0</div>
+      </aside>
+
+      <section class="dossier-area">
+        <article class="dossier">
+          <div class="dossier-header">
+            <span class="dossier-id" id="dossier-id">PAUTA #001</span>
+            <span class="dossier-status" id="dossier-status">EM VERIFICAÇÃO</span>
+          </div>
+
+          <div class="phase phase-question" id="phase-question">
+            <button class="photo-frame" id="product-visual" type="button" aria-label="Ampliar a imagem"></button>
+            <p class="photo-credit" id="photo-credit"></p>
+            <div class="product-name" id="product-name">—</div>
+            <div class="section-label">Legenda que acompanha a imagem</div>
+            <p class="pitch-quote" id="pitch-text">—</p>
+            <div class="hint-zone" id="hint-zone">
+              <button class="hint-btn" id="hint-btn" type="button">🔎 Pedir pista</button>
+              <div class="hint-box" id="hint-box" hidden></div>
+            </div>
+            <div class="verdict-zone">
+              <div class="verdict-prompt" id="verdict-prompt">Qual é a sua checagem?</div>
+              <div class="verdict-buttons">
+                <button class="verdict-btn yes" id="btn-real" type="button">FOTO REAL</button>
+                <button class="verdict-btn no" id="btn-alterada" type="button">ALTERADA POR IA</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="phase phase-revelation" id="phase-revelation" hidden aria-live="polite">
+            <div class="verdict-stamp" id="verdict-stamp">CORRETO</div>
+            <div class="correct-answer">
+              Resposta correta: <span class="ca-tag" id="correct-answer">FOTO REAL</span>
+              <span class="ca-points" id="points-change">+10</span>
+              <span class="level-pill" id="level-pill" hidden></span>
+            </div>
+            <div class="reveal-media" id="reveal-media"></div>
+            <p class="reveal-credit" id="reveal-credit"></p>
+            <p class="revelation-text" id="revelation-text">—</p>
+            <details class="fontes-inline" id="fontes-inline"></details>
+            <button class="next-btn" id="next-btn" type="button">Próxima imagem →</button>
+          </div>
+        </article>
+      </section>
+
+      <aside class="team-panel team-b" id="panel-b">
+        <div class="team-tag">EQUIPE B</div>
+        <div class="score-block">
+          <div class="score-num" id="score-b">0</div>
+          <div class="score-max" id="max-b">/ 100 pts</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" id="progress-b" style="width: 0%"></div></div>
+          <div class="progress-ticks" id="ticks-b"><span>0</span><span>50</span><span>100</span></div>
+        </div>
+        <div class="team-name" id="name-b">Equipe Foco</div>
+        <div class="turn-badge">▶ SUA VEZ</div>
+      </aside>
+    </main>
+  </section>
+
+  <!-- ====== TELA DE ENCERRAMENTO ====== -->
+  <section id="screen-closed" class="screen">
+    <div class="closed-screen">
+      <div class="case-closed-stamp">Edição Fechada</div>
+      <div class="winner-block">
+        <div class="winner-label" id="winner-label">EQUIPE VENCEDORA DA CHECAGEM</div>
+        <div class="winner-name" id="winner-name">—</div>
+        <div class="winner-score" id="winner-score">—</div>
+        <div class="winner-title" id="winner-title">Checadores do dia</div>
+      </div>
+      <div class="closing-question">
+        <div class="q-label">PERGUNTA PARA FECHAR</div>
+        <div class="q-text" id="closing-q">—</div>
+      </div>
+      <div class="closed-actions">
+        <button class="ghost-btn" id="btn-report" type="button">Ver relatório</button>
+        <button class="restart-btn" id="btn-restart" type="button">Nova checagem</button>
+      </div>
+      <p class="save-status" id="save-status"></p>
+    </div>
+  </section>
+
+  <!-- ====== RELATÓRIO FINAL ====== -->
+  <section id="screen-report" class="screen paper-screen">
+    <div class="sheet">
+      <div class="sheet-top">
+        <div>
+          <h2>Relatório da checagem</h2>
+          <p class="sheet-sub" id="report-sub"></p>
+        </div>
+        <div class="btn-row no-print">
+          <button class="btn primary" id="btn-print" type="button">Imprimir / salvar PDF</button>
+          <button class="btn" id="btn-report-back" type="button">Voltar</button>
+        </div>
+      </div>
+      <div class="report-summary" id="report-summary"></div>
+      <div id="report-cases"></div>
+    </div>
+  </section>
+
+  <!-- ====== LOGIN DO PROFESSOR / ADMINISTRADOR ====== -->
+  <section id="screen-login" class="screen paper-screen">
+    <div class="sheet narrow">
+      <div class="sheet-top">
+        <div>
+          <h2>Área do professor</h2>
+          <p class="sheet-sub">Acesso de professores e da administração.</p>
+        </div>
+      </div>
+      <div id="login-msg"></div>
+      <form id="login-form" autocomplete="on">
+        <label class="form-field"><span>Login (e-mail)</span>
+          <input type="email" id="login-email" autocomplete="username" required />
+        </label>
+        <label class="form-field"><span>Senha</span>
+          <input type="password" id="login-senha" autocomplete="current-password" required />
+        </label>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-login" type="submit">Entrar</button>
+          <button class="btn" id="btn-login-back" type="button">Voltar</button>
+          <button class="btn small" id="btn-reset-senha" type="button" style="margin-left:auto">Esqueci a senha</button>
+        </div>
+      </form>
+      <div id="login-demo" hidden>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-demo" type="button">Entrar em modo demonstração</button>
+          <button class="btn" id="btn-login-back2" type="button">Voltar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== PAINEL DO ADMINISTRADOR ====== -->
+  <section id="screen-admin" class="screen paper-screen">
+    <div class="sheet">
+      <div class="sheet-top">
+        <div>
+          <h2 id="admin-title">Painel do administrador</h2>
+          <p class="sheet-sub" id="admin-sub"></p>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="btn-admin-jogar" type="button">Voltar ao início</button>
+          <button class="btn danger" id="btn-logout" type="button">Sair</button>
+        </div>
+      </div>
+      <div id="admin-banner"></div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="cartas" aria-selected="true" type="button">Imagens e pistas</button>
+        <button class="tab" role="tab" data-tab="perguntas" aria-selected="false" type="button">Perguntas finais</button>
+        <button class="tab" role="tab" data-tab="config" aria-selected="false" type="button">Regras</button>
+        <button class="tab" role="tab" data-tab="resultados" aria-selected="false" type="button">Resultados</button>
+        <button class="tab" role="tab" data-tab="professores" aria-selected="false" type="button">Professores</button>
+        <button class="tab" role="tab" data-tab="backup" aria-selected="false" type="button">Backup</button>
+      </div>
+
+      <div class="tab-panel" id="tab-cartas">
+        <div class="btn-row" style="justify-content: space-between; margin-bottom: 10px;">
+          <p class="stat-line" id="cartas-stats" style="margin:0"></p>
+          <button class="btn primary" id="btn-nova-carta" type="button">+ Nova imagem</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>#</th><th></th><th>Título</th><th>Veredito</th><th>Nível</th><th>Pista</th><th>Fontes</th><th>Status</th><th></th></tr></thead>
+            <tbody id="cartas-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-perguntas" hidden>
+        <p class="stat-line">Uma destas perguntas é sorteada na tela de encerramento. Use **texto** para destacar em negrito.</p>
+        <div id="perguntas-list"></div>
+        <div class="btn-row" style="margin-top: 10px;">
+          <button class="btn" id="btn-add-pergunta" type="button">+ Adicionar pergunta</button>
+          <button class="btn primary" id="btn-save-perguntas" type="button">Salvar perguntas</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-config" hidden>
+        <div class="form-grid three">
+          <label class="form-field"><span>Pontos por acerto</span><input type="number" id="cfg-pontosAcerto" min="1" max="100" /></label>
+          <label class="form-field"><span>Acerto com pista</span><input type="number" id="cfg-pontosAcertoComDica" min="0" max="100" /></label>
+          <label class="form-field"><span>Pontos por erro</span><input type="number" id="cfg-pontosErro" min="-100" max="0" /><small>Zero ou negativo. A pontuação nunca fica abaixo de zero.</small></label>
+          <label class="form-field"><span>Meta no modo equipes</span><input type="number" id="cfg-metaEquipes" min="10" max="1000" /><small>Quem chega primeiro fecha a edição.</small></label>
+          <label class="form-field"><span>Imagens no modo individual</span><input type="number" id="cfg-casosIndividual" min="1" max="100" /></label>
+          <label class="form-field"><span>Cronômetro padrão</span>
+            <select id="cfg-tempoPadrao">
+              <option value="0">Sem cronômetro</option><option value="30">30 s</option><option value="45">45 s</option><option value="60">60 s</option><option value="90">90 s</option>
+            </select><small>Pode ser alterado na tela inicial a cada partida. Tempo esgotado vale 0 ponto.</small>
+          </label>
+        </div>
+        <button class="btn primary" id="btn-save-config" type="button">Salvar regras</button>
+      </div>
+
+      <div class="tab-panel" id="tab-resultados" hidden>
+        <div class="btn-row" style="margin-bottom: 10px;">
+          <input class="inline-input" id="res-filtro" type="text" placeholder="Filtrar por código da turma" style="max-width: 260px;" />
+          <button class="btn" id="btn-res-atualizar" type="button">Atualizar</button>
+          <button class="btn" id="btn-res-csv" type="button">Exportar CSV</button>
+        </div>
+        <p class="stat-line" id="res-stats"></p>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Data</th><th>Turma</th><th>Modo</th><th>Participante</th><th>Pontos</th><th>Acertos</th><th>Pistas</th><th></th></tr></thead>
+            <tbody id="res-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-professores" hidden>
+        <p class="stat-line">Professores entram com login e senha próprios e veem apenas os resultados das turmas indicadas aqui. Não editam imagens nem regras.</p>
+        <div id="prof-msg"></div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Nome</th><th>Login</th><th>Turmas</th><th></th></tr></thead>
+            <tbody id="prof-tbody"></tbody>
+          </table>
+        </div>
+        <h3 id="prof-form-title">Novo professor</h3>
+        <form id="prof-form" autocomplete="off">
+          <div class="form-grid">
+            <label class="form-field"><span>Nome</span><input type="text" id="pf-nome" maxlength="60" required /></label>
+            <label class="form-field"><span>Turmas</span><input type="text" id="pf-turmas" maxlength="300" placeholder="2B-MANHA, 3A" required />
+              <small>Códigos separados por vírgula (até 20). São os mesmos códigos que os estudantes digitam na tela inicial.</small></label>
+            <label class="form-field" id="pf-email-wrap"><span>Login (e-mail)</span><input type="email" id="pf-email" autocomplete="off" /></label>
+            <label class="form-field" id="pf-senha-wrap"><span>Senha provisória</span><input type="password" id="pf-senha" autocomplete="new-password" minlength="6" />
+              <small>Mínimo de 6 caracteres. O professor pode trocá-la depois em “Esqueci a senha”.</small></label>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" type="submit" id="btn-prof-save">Cadastrar professor</button>
+            <button class="btn" type="button" id="btn-prof-cancel" hidden>Cancelar edição</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-panel" id="tab-backup" hidden>
+        <h3>Exportar</h3>
+        <p class="stat-line">Baixa todo o banco (imagens, pistas, perguntas e regras) em um arquivo JSON. Guarde uma cópia antes de mudanças grandes.</p>
+        <button class="btn" id="btn-export" type="button">Baixar banco em JSON</button>
+        <h3>Importar</h3>
+        <p class="stat-line">Substitui o banco atual pelo conteúdo de um arquivo JSON exportado por este painel.</p>
+        <input type="file" id="file-import" accept="application/json,.json" />
+        <h3>Restaurar padrão</h3>
+        <p class="stat-line">Volta para as imagens de fábrica que acompanham o site (arquivo dados/cartas.js).</p>
+        <button class="btn danger" id="btn-restaurar" type="button">Restaurar banco padrão</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Modal: revisão da imagem anterior -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="review-title">
+    <div class="modal-header">
+      <span class="modal-title" id="review-title">Revisão · Imagem anterior</span>
+      <span class="modal-subtitle" id="review-case-id">PAUTA #—</span>
+    </div>
+    <div class="modal-body" id="review-body"></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="btn-close-review" type="button">Fechar e voltar à checagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmar saída -->
+<div class="modal-overlay" id="home-modal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="home-title">
+    <div class="modal-header">
+      <span class="modal-title" id="home-title">Sair da checagem?</span>
+    </div>
+    <div class="modal-body">
+      <p>O progresso fica salvo neste aparelho. Você poderá <strong>retomar</strong> pela tela inicial.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" id="btn-home-stay" type="button">Continuar checando</button>
+      <button class="modal-btn primary danger" id="btn-home-go" type="button">Ir para o início</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editor de imagem -->
+<div class="modal-overlay" id="card-modal">
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
+    <div class="modal-header">
+      <span class="modal-title" id="card-modal-title">Editar imagem</span>
+      <span class="modal-subtitle" id="card-modal-id"></span>
+    </div>
+    <form id="card-form" class="modal-body">
+      <div id="card-form-msg"></div>
+      <div class="form-grid">
+        <label class="form-field"><span>Título</span><input type="text" id="cf-titulo" maxlength="80" required /></label>
+        <label class="form-field"><span>Veredito correto</span>
+          <select id="cf-alterada"><option value="false">FOTO REAL</option><option value="true">ALTERADA POR IA</option></select>
+        </label>
+      </div>
+      <div class="img-row">
+        <div class="img-preview" id="cf-preview"></div>
+        <label class="form-field"><span>Imagem mostrada na checagem</span><input type="text" id="cf-image" maxlength="300" placeholder="img/foto-17.jpg" />
+          <small>Caminho relativo de um arquivo que já está na pasta img/ do repositório, ou um endereço https. Vazio = usa o emoji.</small>
+        </label>
+        <label class="form-field" style="flex: 0 0 90px;"><span>Emoji</span><input type="text" id="cf-icon" maxlength="8" /></label>
+      </div>
+      <label class="form-field"><span>Crédito da foto</span><input type="text" id="cf-credito" maxlength="160" placeholder="Foto: Nome/Agência (licença)" />
+        <small>Aparece sob a imagem. Em imagens alteradas, é o crédito da foto de origem.</small></label>
+      <div class="form-grid">
+        <label class="form-field"><span>Foto original (só para alteradas)</span><input type="text" id="cf-original" maxlength="300" placeholder="img/foto-17-original.jpg" />
+          <small>Mostrada ao lado da alterada na revelação, para comparar. Opcional.</small></label>
+        <label class="form-field"><span>Nível (só para alteradas)</span>
+          <select id="cf-nivel"><option value="">—</option><option value="facil">Fácil (evidente)</option><option value="medio">Médio (plausível)</option><option value="dificil">Difícil (sutil)</option></select>
+        </label>
+      </div>
+      <label class="form-field"><span>Legenda que acompanha a imagem</span><textarea id="cf-pitch" maxlength="400" required></textarea>
+        <small>Em fotos reais, a legenda da reportagem. Em alteradas, a legenda falsa que sustentaria a imagem.</small></label>
+      <label class="form-field"><span>Pista</span><textarea id="cf-dica" maxlength="400"></textarea>
+        <small>Opcional. Boa pista é uma pergunta que faz pensar, sem entregar a resposta. Vazio = imagem sem pista.</small></label>
+      <label class="form-field"><span>Revelação</span><textarea id="cf-revelacao" maxlength="900" required style="min-height: 110px;"></textarea></label>
+      <div class="form-field"><span>Fontes</span>
+        <div id="cf-fontes"></div>
+        <button class="btn small" id="btn-add-fonte" type="button">+ Adicionar fonte</button>
+      </div>
+      <label class="check-field"><input type="checkbox" id="cf-ativa" /> Imagem ativa (entra no sorteio)</label>
+      <div class="modal-actions">
+        <button class="modal-btn" id="btn-card-cancel" type="button">Cancelar</button>
+        <button class="modal-btn primary" id="btn-card-save" type="submit">Salvar imagem</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Lupa: imagem ampliada e comparação original x alterada -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
+  <div class="lb-bar">
+    <span class="lb-label" id="lb-label"></span>
+    <span class="btn-row">
+      <button class="lb-btn destaque" id="lb-toggle" type="button" hidden>⇄ Alternar original / alterada</button>
+      <button class="lb-btn" id="lb-close" type="button">✕ Fechar</button>
+    </span>
+  </div>
+  <div class="lb-stage" id="lb-stage"><img id="lb-img" alt="" /></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:24px;color:#f6f3ec">O Descubra a Verdade precisa de JavaScript ativado para funcionar.</p></noscript>
+
+<!-- Banco de imagens padrão e configuração do Firebase (caminhos relativos) -->
+<script src="dados/cartas.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+/* ============================================================
+   DESCUBRA A VERDADE · v1 (mesma estrutura do Caça-IA v4)
+   Fotos reais de reportagens x fotos alteradas com IA generativa
+   Modo individual e em equipes · pistas · cronômetro · relatório
+   Login de administrador e banco de imagens online (Firebase)
+   Cocriação Well + Claude · Novembro 2026
+   ------------------------------------------------------------
+   Arquivos que este site usa:
+     dados/cartas.js      banco de imagens padrão (de fábrica)
+     firebase-config.js   chaves do seu projeto Firebase
+     img/                 fotos (caminhos relativos)
+   Sem Firebase configurado, tudo funciona em MODO DEMONSTRAÇÃO:
+   as edições do painel ficam só neste navegador.
+   ============================================================ */
+'use strict';
+
+const FB_VERSION = '12.18.0'; // versão do SDK do Firebase carregada do CDN oficial
+const LS = {
+  partida: 'descubra.v1.partida',
+  banco: 'descubra.v1.bancoLocal',
+  cache: 'descubra.v1.bancoCache',
+  resultados: 'descubra.v1.resultadosLocal',
+  prefs: 'descubra.v1.prefs'
+};
+const CONFIG_PADRAO = { pontosAcerto: 10, pontosAcertoComDica: 5, pontosErro: -10, metaEquipes: 60, casosIndividual: 10, tempoPadrao: 0 };
+const TEMPOS = [0, 30, 45, 60, 90];
+const NIVEIS = { facil: 'Fácil', medio: 'Médio', dificil: 'Difícil' };
+const ROTULO = { real: 'FOTO REAL', alterada: 'ALTERADA POR IA' };
+const rotuloDe = alterada => (alterada ? ROTULO.alterada : ROTULO.real);
+
+/* ====== Utilitários ====== */
+const $ = id => document.getElementById(id);
+function lsGet(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { /* sem armazenamento */ } }
+
+/* Todo texto vindo de usuário ou do banco passa por esc() antes de virar HTML */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function rich(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+function safeUrl(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; }
+function safeImg(u) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  if (/^https?:\/\//i.test(u) || /^data:image\//i.test(u)) return u;
+  if (/^[\p{L}\p{N}_\-./ %]+$/u.test(u) && !u.startsWith('/') && !u.includes('..')) return u;
+  return '';
+}
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pad(n, len) { return String(n).padStart(len, '0'); }
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('tempo-esgotado')), ms))]);
+}
+let toastTimer = null;
+function toast(msg, isErr) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3200);
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function visualHTML(card) {
+  const img = safeImg(card.image);
+  const emoji = `<span class="product-emoji">${esc(card.icon || '📰')}</span>`;
+  return img ? `<img src="${esc(img)}" alt="" data-fallback="${esc(card.icon || '📰')}">` : emoji;
+}
+/* Se a imagem falhar (arquivo ausente, link quebrado), entra o emoji */
+document.addEventListener('error', e => {
+  const el = e.target;
+  if (el && el.tagName === 'IMG' && el.dataset && el.dataset.fallback !== undefined) {
+    const span = document.createElement('span');
+    span.className = 'product-emoji';
+    span.textContent = el.dataset.fallback;
+    el.replaceWith(span);
+  }
+}, true);
+
+/* ============================================================
+   BANCO DE IMAGENS
+   ============================================================ */
+function normalizarBanco(b) {
+  const base = window.DV_PADRAO || { config: {}, cartas: [], perguntasFinais: [] };
+  if (!b || !Array.isArray(b.cartas)) b = base;
+  const cfg = Object.assign({}, CONFIG_PADRAO, base.config || {}, b.config || {});
+  Object.keys(CONFIG_PADRAO).forEach(k => { const n = Number(cfg[k]); cfg[k] = Number.isFinite(n) ? n : CONFIG_PADRAO[k]; });
+  cfg.pontosAcerto = Math.max(1, cfg.pontosAcerto);
+  cfg.pontosAcertoComDica = Math.max(0, cfg.pontosAcertoComDica);
+  cfg.pontosErro = Math.min(0, cfg.pontosErro);
+  cfg.metaEquipes = Math.max(1, cfg.metaEquipes);
+  cfg.casosIndividual = Math.max(1, Math.round(cfg.casosIndividual));
+  if (!TEMPOS.includes(cfg.tempoPadrao)) cfg.tempoPadrao = 0;
+  const usados = new Set();
+  const cartas = b.cartas.filter(c => c && c.titulo).map((c, i) => {
+    let id = Number(c.id) || (i + 1);
+    while (usados.has(id)) id++;
+    usados.add(id);
+    return {
+      id,
+      titulo: String(c.titulo),
+      icon: String(c.icon || '📰'),
+      image: String(c.image || ''),
+      credito: String(c.credito || ''),
+      legenda: String(c.legenda || ''),
+      alterada: !!c.alterada,
+      nivel: c.alterada && NIVEIS[c.nivel] ? String(c.nivel) : '',
+      original: c.alterada ? String(c.original || '') : '',
+      dica: String(c.dica || ''),
+      revelacao: String(c.revelacao || ''),
+      fontes: Array.isArray(c.fontes) ? c.fontes.filter(f => f && f.titulo).map(f => ({ titulo: String(f.titulo), url: String(f.url || '') })) : [],
+      ativa: c.ativa !== false
+    };
+  });
+  const perguntas = Array.isArray(b.perguntasFinais) ? b.perguntasFinais.map(String).filter(s => s.trim()) : [];
+  return { versao: 1, config: cfg, cartas, perguntasFinais: perguntas, atualizadoEm: b.atualizadoEm || null };
+}
+
+let BANCO = normalizarBanco(null);
+let origemBanco = 'padrao';   // 'padrao' | 'online' | 'cache' | 'local'
+let fb = null;                // módulos e instâncias do Firebase, quando configurado
+let erroFirebase = null;
+let adminUser = null;         // { email, uid, papel: 'admin' | 'professor', turmas } | { demo: true, papel: 'admin' }
+
+const cartaPorId = id => BANCO.cartas.find(c => c.id === id);
+const cartasAtivas = () => BANCO.cartas.filter(c => c.ativa);
+
+function firebaseConfigurado() {
+  const c = window.DV_FIREBASE;
+  return !!(c && c.apiKey && c.projectId && !/^COLE/i.test(c.apiKey));
+}
+async function initFirebase() {
+  if (fb) return fb;
+  if (!firebaseConfigurado()) return null;
+  const base = `https://www.gstatic.com/firebasejs/${FB_VERSION}/`;
+  const [A, U, F] = await Promise.all([
+    import(base + 'firebase-app.js'),
+    import(base + 'firebase-auth.js'),
+    import(base + 'firebase-firestore.js')
+  ]);
+  const app = A.initializeApp(window.DV_FIREBASE);
+  fb = { A, U, F, auth: U.getAuth(app), db: F.getFirestore(app) };
+  return fb;
+}
+async function carregarBanco() {
+  if (firebaseConfigurado()) {
+    try {
+      await withTimeout(initFirebase(), 10000);
+      const snap = await withTimeout(fb.F.getDoc(fb.F.doc(fb.db, 'conteudo', 'banco')), 10000);
+      if (snap.exists()) { BANCO = normalizarBanco(snap.data()); origemBanco = 'online'; lsSet(LS.cache, BANCO); }
+      else { origemBanco = 'padrao'; }
+    } catch (e) {
+      erroFirebase = e;
+      console.warn('[Descubra] Não foi possível ler o banco online; usando cópia local.', e);
+      const cache = lsGet(LS.cache);
+      if (cache) { BANCO = normalizarBanco(cache); origemBanco = 'cache'; } else { origemBanco = 'padrao'; }
+    }
+  } else {
+    const local = lsGet(LS.banco);
+    if (local) { BANCO = normalizarBanco(local); origemBanco = 'local'; }
+  }
+}
+async function salvarBanco() {
+  BANCO.atualizadoEm = new Date().toISOString();
+  const dados = JSON.parse(JSON.stringify(BANCO));
+  if (fb && adminUser && !adminUser.demo) {
+    await fb.F.setDoc(fb.F.doc(fb.db, 'conteudo', 'banco'), dados);
+    origemBanco = 'online';
+    lsSet(LS.cache, dados);
+  } else {
+    if (!lsSet(LS.banco, dados)) throw new Error('Este navegador bloqueou o armazenamento local.');
+    origemBanco = 'local';
+  }
+  atualizarStatusBanco();
+}
+function atualizarStatusBanco() {
+  const n = cartasAtivas().length;
+  const txt = {
+    padrao: firebaseConfigurado() ? 'banco padrão (ainda não publicado online)' : 'banco padrão',
+    online: 'banco online',
+    cache: 'sem conexão · última versão baixada',
+    local: 'banco editado neste navegador (demonstração)'
+  }[origemBanco];
+  $('bank-status').textContent = `${n} imagens ativas · ${txt}`;
+}
+
+/* ====== Resultados (só com código de turma) ====== */
+async function registrarResultado(r) {
+  if (!r.turma) return 'sem-turma';
+  if (firebaseConfigurado()) {
+    await initFirebase();
+    await withTimeout(fb.F.addDoc(fb.F.collection(fb.db, 'resultados'), Object.assign({}, r, { criadoEm: fb.F.serverTimestamp() })), 10000);
+    return 'online';
+  }
+  const lista = lsGet(LS.resultados) || [];
+  lista.unshift(Object.assign({}, r, { id: 'L' + Date.now(), criadoEm: new Date().toISOString() }));
+  lsSet(LS.resultados, lista.slice(0, 500));
+  return 'local';
+}
+async function listarResultados() {
+  if (fb && adminUser && !adminUser.demo) {
+    const F = fb.F;
+    const ler = d => {
+      const x = d.data();
+      return Object.assign({}, x, { id: d.id, criadoEm: x.criadoEm && x.criadoEm.toDate ? x.criadoEm.toDate() : null });
+    };
+    if (adminUser.papel === 'professor') {
+      // O professor só pode consultar turma por turma (é o que as regras do Firestore permitem)
+      const todos = [];
+      for (const turma of adminUser.turmas) {
+        const snap = await F.getDocs(F.query(F.collection(fb.db, 'resultados'), F.where('turma', '==', turma), F.limit(500)));
+        snap.docs.forEach(d => todos.push(ler(d)));
+      }
+      return todos.sort((a, b) => (b.criadoEm ? b.criadoEm.getTime() : 0) - (a.criadoEm ? a.criadoEm.getTime() : 0));
+    }
+    const snap = await F.getDocs(F.query(F.collection(fb.db, 'resultados'), F.orderBy('criadoEm', 'desc'), F.limit(500)));
+    return snap.docs.map(ler);
+  }
+  return (lsGet(LS.resultados) || []).map(x => Object.assign({}, x, { criadoEm: x.criadoEm ? new Date(x.criadoEm) : null }));
+}
+async function apagarResultado(id) {
+  if (fb && adminUser && !adminUser.demo) { await fb.F.deleteDoc(fb.F.doc(fb.db, 'resultados', id)); return; }
+  lsSet(LS.resultados, (lsGet(LS.resultados) || []).filter(x => x.id !== id));
+}
+
+/* ============================================================
+   CHECAGEM (motor da atividade)
+   ============================================================ */
+const state = {
+  modo: 'individual', nomeA: '', nomeB: '', turma: '', tempo: 0,
+  scoreA: 0, scoreB: 0, vez: 'A', deck: [], idx: 0, caso: 1,
+  respondida: false, dicaUsada: false, historico: [], fim: false
+};
+const timer = { id: null, resta: 0 };
+let modoSelecionado = 'individual';
+
+function cfg() { return BANCO.config; }
+function algumModalAberto() { return !!document.querySelector('.modal-overlay.show'); }
+
+function selecionarModo(m) {
+  modoSelecionado = m;
+  $('mode-individual').setAttribute('aria-pressed', String(m === 'individual'));
+  $('mode-equipes').setAttribute('aria-pressed', String(m === 'equipes'));
+  $('field-solo').hidden = m !== 'individual';
+  $('field-team-a').hidden = m !== 'equipes';
+  $('field-team-b').hidden = m !== 'equipes';
+  atualizarDicaRodape();
+}
+function atualizarDicaRodape() {
+  const c = cfg();
+  const erro = c.pontosErro === 0 ? 'Errou 0' : `Errou ${c.pontosErro}`.replace('-', '−');
+  const base = `Acertou +${c.pontosAcerto} · Com pista +${c.pontosAcertoComDica} · ${erro}`;
+  const n = Math.min(c.casosIndividual, cartasAtivas().length);
+  $('footer-hint').textContent = modoSelecionado === 'individual'
+    ? `${base} · ${n} imagens para checar`
+    : `${base} · Quem chegar a ${c.metaEquipes} pontos fecha a edição`;
+}
+function limparTurma(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 20); }
+
+function startGame() {
+  const ativas = cartasAtivas();
+  if (!ativas.length) { toast('Não há imagens ativas no banco. Peça ao professor para ativar alguma.', true); return; }
+  state.modo = modoSelecionado;
+  state.nomeA = state.modo === 'individual' ? ($('input-solo').value.trim() || 'Checador(a)') : ($('input-team-a').value.trim() || 'Equipe A');
+  state.nomeB = state.modo === 'individual' ? '' : ($('input-team-b').value.trim() || 'Equipe B');
+  state.turma = limparTurma($('input-turma').value);
+  state.tempo = Number($('select-tempo').value) || 0;
+  state.scoreA = 0; state.scoreB = 0;
+  let deck = shuffle(ativas).map(c => c.id);
+  if (state.modo === 'individual') deck = deck.slice(0, Math.min(cfg().casosIndividual, deck.length));
+  state.deck = deck;
+  state.idx = 0; state.caso = 1;
+  state.vez = state.modo === 'individual' ? 'A' : (Math.random() < 0.5 ? 'A' : 'B');
+  state.respondida = false; state.dicaUsada = false; state.historico = []; state.fim = false;
+  lsSet(LS.prefs, { modo: state.modo, tempo: state.tempo, turma: state.turma });
+  montarTelaJogo();
+  loadCard();
+}
+function montarTelaJogo() {
+  const solo = state.modo === 'individual';
+  document.body.classList.toggle('modo-individual', solo);
+  $('name-a').textContent = state.nomeA;
+  $('name-b').textContent = state.nomeB;
+  $('tag-a').textContent = solo ? 'CHECADOR(A)' : 'EQUIPE A';
+  const meta = solo ? state.deck.length * cfg().pontosAcerto : cfg().metaEquipes;
+  $('max-a').textContent = `/ ${meta} pts`;
+  $('max-b').textContent = `/ ${meta} pts`;
+  const ticks = solo
+    ? `<span>imagem 1</span><span></span><span>imagem ${state.deck.length}</span>`
+    : `<span>0</span><span>${Math.round(meta / 2)}</span><span>${meta}</span>`;
+  $('ticks-a').innerHTML = ticks; $('ticks-b').innerHTML = ticks;
+  $('verdict-prompt').textContent = solo ? 'Qual é a sua checagem?' : 'O que a equipe decide?';
+  showScreen('screen-game');
+  updateScores();
+  updateTurnUI();
+  refreshBackBtn();
+}
+function updateScores(boost) {
+  $('score-a').textContent = state.scoreA;
+  $('score-b').textContent = state.scoreB;
+  if (state.modo === 'individual') {
+    const feitos = state.historico.length;
+    $('progress-a').style.width = (state.deck.length ? Math.round(100 * feitos / state.deck.length) : 0) + '%';
+    const acertos = state.historico.filter(h => h.correto).length;
+    $('solo-stats').textContent = `Acertos: ${acertos} de ${feitos}`;
+  } else {
+    const meta = cfg().metaEquipes;
+    $('progress-a').style.width = Math.max(0, Math.min(100, 100 * state.scoreA / meta)) + '%';
+    $('progress-b').style.width = Math.max(0, Math.min(100, 100 * state.scoreB / meta)) + '%';
+  }
+  if (boost) {
+    const el = $('score-' + boost.toLowerCase());
+    el.classList.add('boost');
+    setTimeout(() => el.classList.remove('boost'), 600);
+  }
+}
+function updateTurnUI() {
+  $('panel-a').classList.toggle('active', state.vez === 'A');
+  $('panel-b').classList.toggle('active', state.vez === 'B' && state.modo === 'equipes');
+}
+function partidaAcabou() {
+  const ultimo = state.idx >= state.deck.length - 1;
+  if (state.modo === 'individual') return ultimo;
+  return ultimo || state.scoreA >= cfg().metaEquipes || state.scoreB >= cfg().metaEquipes;
+}
+
+function renderCabecalhoCaso(card) {
+  $('product-visual').innerHTML = visualHTML(card) + '<span class="zoom-chip">🔍 AMPLIAR</span>';
+  $('photo-credit').textContent = card.credito;
+  $('photo-credit').hidden = !card.credito;
+  $('product-name').textContent = card.titulo;
+  $('dossier-id').textContent = `PAUTA #${pad(card.id, 3)}`;
+  $('case-counter').textContent = state.modo === 'individual'
+    ? `IMAGEM ${pad(state.caso, 2)} DE ${pad(state.deck.length, 2)}`
+    : `IMAGEM ${pad(state.caso, 2)}`;
+}
+function loadCard() {
+  const card = cartaPorId(state.deck[state.idx]);
+  state.respondida = false;
+  state.dicaUsada = false;
+  $('phase-question').hidden = false;
+  $('phase-revelation').hidden = true;
+  $('dossier-status').textContent = 'EM VERIFICAÇÃO';
+  renderCabecalhoCaso(card);
+  $('pitch-text').textContent = card.legenda;
+  const temDica = !!card.dica.trim();
+  $('hint-zone').hidden = !temDica;
+  $('hint-btn').hidden = false;
+  $('hint-btn').textContent = `🔎 Pedir pista (o acerto passa a valer ${cfg().pontosAcertoComDica} em vez de ${cfg().pontosAcerto})`;
+  $('hint-box').hidden = true;
+  $('hint-box').textContent = '';
+  salvarPartida();
+  startTimer();
+}
+function pedirPista() {
+  if (state.respondida || state.dicaUsada) return;
+  const card = cartaPorId(state.deck[state.idx]);
+  state.dicaUsada = true;
+  $('hint-btn').hidden = true;
+  $('hint-box').innerHTML = `<b>PISTA</b>${esc(card.dica)}`;
+  $('hint-box').hidden = false;
+  salvarPartida();
+}
+
+/* guess: true (alterada por IA) | false (foto real) | null (tempo esgotado) */
+function answer(guess) {
+  if (state.respondida) return;
+  state.respondida = true;
+  stopTimer();
+  const card = cartaPorId(state.deck[state.idx]);
+  const semResposta = guess === null;
+  const correto = !semResposta && guess === card.alterada;
+  const c = cfg();
+  const delta = correto ? (state.dicaUsada ? c.pontosAcertoComDica : c.pontosAcerto) : (semResposta ? 0 : c.pontosErro);
+  if (state.vez === 'A') state.scoreA = Math.max(0, state.scoreA + delta);
+  else state.scoreB = Math.max(0, state.scoreB + delta);
+  const entrada = {
+    id: card.id, vez: state.vez, nome: state.vez === 'A' ? state.nomeA : state.nomeB,
+    guess, correto, delta, caso: state.caso, dica: state.dicaUsada
+  };
+  state.historico.push(entrada);
+  updateScores(correto ? state.vez : null);
+  renderRevelacao(entrada);
+  refreshBackBtn();
+  salvarPartida();
+}
+function renderRevelacao(h) {
+  const card = cartaPorId(h.id);
+  $('phase-question').hidden = true;
+  $('phase-revelation').hidden = false;
+  $('dossier-status').textContent = 'CHECADA';
+  const stamp = $('verdict-stamp');
+  stamp.textContent = h.guess === null ? 'TEMPO ESGOTADO' : (h.correto ? 'CORRETO' : 'INCORRETO');
+  stamp.className = 'verdict-stamp ' + (h.guess === null ? 'timeout' : (h.correto ? 'correct' : 'wrong'));
+  $('correct-answer').textContent = rotuloDe(card.alterada);
+  const lv = $('level-pill');
+  lv.hidden = !card.nivel;
+  lv.textContent = card.nivel ? `Nível ${NIVEIS[card.nivel]}` : '';
+  $('reveal-media').className = 'reveal-media' + (card.alterada && safeImg(card.original) ? ' duas' : '');
+  $('reveal-media').innerHTML = midiaRevelacaoHTML(card);
+  $('reveal-credit').textContent = creditoRevelacao(card);
+  $('reveal-credit').hidden = !card.credito;
+  const p = $('points-change');
+  p.textContent = (h.delta > 0 ? '+' : '') + h.delta + ' pts' + (h.correto && h.dica ? ' (com pista)' : '');
+  p.className = 'ca-points' + (h.delta < 0 ? ' minus' : (h.delta === 0 ? ' zero' : ''));
+  $('revelation-text').textContent = card.revelacao;
+  $('fontes-inline').innerHTML = fontesHTML(card, true);
+  $('fontes-inline').hidden = !card.fontes.length;
+  $('fontes-inline').open = false;
+  $('next-btn').textContent = partidaAcabou() ? 'Fechar a edição ★' : 'Próxima imagem →';
+}
+/* Imagens da revelação: a foto real sozinha, ou a alterada ao lado da original */
+function itensLupa(card, revelado) {
+  const img = safeImg(card.image);
+  if (!img) return [];
+  if (!revelado) return [{ src: img, rotulo: 'Imagem em verificação', tipo: '' }];
+  if (!card.alterada) return [{ src: img, rotulo: 'Foto real', tipo: 'orig' }];
+  const itens = [{ src: img, rotulo: 'Como circulou · alterada por IA', tipo: 'alt' }];
+  const orig = safeImg(card.original);
+  if (orig) itens.push({ src: orig, rotulo: 'Foto original', tipo: 'orig' });
+  return itens;
+}
+function midiaRevelacaoHTML(card) {
+  const itens = itensLupa(card, true);
+  if (!itens.length) return '';
+  return itens.map((it, i) => `<figure>
+      <button class="photo-frame" type="button" data-lupa="${i}" data-id="${card.id}" aria-label="Ampliar: ${esc(it.rotulo)}">
+        <img src="${esc(it.src)}" alt="" data-fallback="${esc(card.icon || '📰')}"><span class="zoom-chip">🔍 ${itens.length > 1 ? 'COMPARAR' : 'AMPLIAR'}</span>
+      </button>
+      <figcaption class="${it.tipo}">${esc(it.rotulo)}</figcaption>
+    </figure>`).join('');
+}
+function creditoRevelacao(card) {
+  if (!card.credito) return '';
+  return card.alterada ? `Imagem alterada com IA generativa para esta atividade, a partir de: ${card.credito}` : card.credito;
+}
+
+/* ====== Lupa (não pausa o cronômetro) ====== */
+const lupa = { itens: [], i: 0 };
+function renderLupa() {
+  const it = lupa.itens[lupa.i];
+  $('lb-img').src = it.src;
+  $('lb-label').textContent = it.rotulo;
+  $('lb-label').className = 'lb-label ' + it.tipo;
+  $('lb-toggle').hidden = lupa.itens.length < 2;
+  $('lb-stage').classList.toggle('alterna', lupa.itens.length > 1);
+}
+function abrirLupa(itens, i) {
+  if (!itens.length) return;
+  lupa.itens = itens; lupa.i = Math.min(i || 0, itens.length - 1);
+  renderLupa();
+  $('lightbox').classList.add('show');
+  $('lb-close').focus();
+}
+function alternarLupa() { if (lupa.itens.length > 1) { lupa.i = (lupa.i + 1) % lupa.itens.length; renderLupa(); } }
+function fecharLupa() { $('lightbox').classList.remove('show'); }
+function lupaAberta() { return $('lightbox').classList.contains('show'); }
+
+function fontesHTML(card, comSummary) {
+  if (!card.fontes.length) return '';
+  const itens = card.fontes.map(f => {
+    const u = safeUrl(f.url);
+    return u ? `<li>→ <a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(f.titulo)}</a></li>` : `<li>→ ${esc(f.titulo)}</li>`;
+  }).join('');
+  return (comSummary ? '<summary>Fontes: confira você também</summary>' : '') + `<ul>${itens}</ul>`;
+}
+function nextCard() {
+  if (!state.respondida) return;
+  if (partidaAcabou()) return endGame();
+  state.idx++; state.caso++;
+  if (state.modo === 'equipes') state.vez = state.vez === 'A' ? 'B' : 'A';
+  updateTurnUI();
+  loadCard();
+}
+
+/* ====== Cronômetro ====== */
+function renderTimer() {
+  const chip = $('timer-chip');
+  chip.hidden = !state.tempo;
+  if (!state.tempo) return;
+  const r = Math.max(0, timer.resta);
+  chip.textContent = `${Math.floor(r / 60)}:${pad(r % 60, 2)}`;
+  chip.classList.toggle('low', r <= 10);
+}
+function startTimer() {
+  stopTimer();
+  timer.resta = state.tempo;
+  renderTimer();
+  if (!state.tempo) return;
+  timer.id = setInterval(() => {
+    if (algumModalAberto() || !$('screen-game').classList.contains('active')) return; // pausa
+    timer.resta--;
+    renderTimer();
+    if (timer.resta <= 0) { stopTimer(); answer(null); }
+  }, 1000);
+}
+function stopTimer() { if (timer.id) { clearInterval(timer.id); timer.id = null; } }
+
+/* ====== Persistência da partida ====== */
+function salvarPartida() { lsSet(LS.partida, state); }
+function partidaSalva() {
+  const p = lsGet(LS.partida);
+  if (!p || p.fim || !Array.isArray(p.deck) || !p.deck.length) return null;
+  if (!p.deck.every(id => cartaPorId(id))) return null; // o banco mudou: descarta
+  return p;
+}
+function atualizarBotaoRetomar() {
+  const p = partidaSalva();
+  const b = $('btn-resume');
+  b.hidden = !p;
+  if (p) {
+    const quem = p.modo === 'individual' ? p.nomeA : `${p.nomeA} × ${p.nomeB}`;
+    b.textContent = `↩ Retomar checagem de ${quem} (imagem ${p.caso})`;
+  }
+}
+function retomarPartida() {
+  const p = partidaSalva();
+  if (!p) { atualizarBotaoRetomar(); return; }
+  Object.assign(state, p);
+  montarTelaJogo();
+  if (state.respondida && state.historico.length) {
+    renderCabecalhoCaso(cartaPorId(state.deck[state.idx]));
+    renderRevelacao(state.historico[state.historico.length - 1]);
+    renderTimer();
+  } else {
+    const dica = state.dicaUsada;
+    loadCard();
+    if (dica) pedirPista();
+  }
+}
+
+/* ====== Encerramento ====== */
+function tituloIndividual(pct) {
+  if (pct >= 90) return 'Editor(a)-chefe de checagem';
+  if (pct >= 70) return 'Checador(a) experiente';
+  if (pct >= 50) return 'Repórter em treinamento';
+  return 'Estagiário(a) da redação: vale checar de novo';
+}
+function resumoPartida() {
+  const total = state.historico.length;
+  const acertos = state.historico.filter(h => h.correto).length;
+  const dicas = state.historico.filter(h => h.dica).length;
+  const solo = state.modo === 'individual';
+  return {
+    total, acertos, dicas, solo,
+    pct: total ? Math.round(100 * acertos / total) : 0,
+    participante: solo ? state.nomeA : `${state.nomeA} x ${state.nomeB}`,
+    pontos: solo ? String(state.scoreA) : `${state.scoreA} x ${state.scoreB}`
+  };
+}
+async function endGame() {
+  stopTimer();
+  state.fim = true;
+  lsDel(LS.partida);
+  const r = resumoPartida();
+  if (r.solo) {
+    $('winner-label').textContent = 'RESULTADO DA CHECAGEM';
+    $('winner-name').textContent = state.nomeA;
+    $('winner-score').textContent = `${state.scoreA} pontos · ${r.acertos} de ${r.total} imagens checadas corretamente (${r.pct}%)`;
+    $('winner-title').textContent = tituloIndividual(r.pct);
+  } else {
+    let vencedor = 'EMPATE — as duas equipes';
+    if (state.scoreA > state.scoreB) vencedor = state.nomeA;
+    else if (state.scoreB > state.scoreA) vencedor = state.nomeB;
+    $('winner-label').textContent = 'EQUIPE VENCEDORA DA CHECAGEM';
+    $('winner-name').textContent = vencedor;
+    $('winner-score').textContent = `Placar: ${state.nomeA} ${state.scoreA} × ${state.scoreB} ${state.nomeB}`;
+    $('winner-title').textContent = 'Checadores do dia';
+  }
+  const qs = BANCO.perguntasFinais;
+  $('closing-q').innerHTML = qs.length ? rich(qs[Math.floor(Math.random() * qs.length)]) : 'O que mais surpreendeu vocês nesta checagem?';
+  const st = $('save-status');
+  st.textContent = state.turma ? 'Registrando resultado…' : 'Sem código de turma: nenhum resultado foi registrado.';
+  showScreen('screen-closed');
+  if (!state.turma) return;
+  try {
+    const onde = await registrarResultado({
+      modo: state.modo, participante: r.participante.slice(0, 60), turma: state.turma,
+      pontos: r.pontos, acertos: r.acertos, total: r.total, dicas: r.dicas
+    });
+    st.textContent = onde === 'online'
+      ? `Resultado registrado para a turma ${state.turma}.`
+      : `Resultado guardado neste navegador para a turma ${state.turma} (modo demonstração).`;
+  } catch (e) {
+    console.warn('[Descubra] Falha ao registrar resultado', e);
+    st.textContent = 'Não foi possível registrar o resultado (sem conexão?). Use o relatório para guardar uma cópia.';
+  }
+}
+
+/* ====== Relatório final ====== */
+function abrirRelatorio() {
+  const r = resumoPartida();
+  const data = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  $('report-sub').textContent = `${data} · modo ${r.solo ? 'individual' : 'duas equipes'} · ${r.participante.replace(' x ', ' × ')}` +
+    (state.turma ? ` · turma ${state.turma}` : '') + (state.tempo ? ` · ${state.tempo}s por imagem` : ' · sem cronômetro');
+  $('report-summary').innerHTML = [
+    [r.pontos.replace(' x ', ' × '), 'pontuação'],
+    [`${r.acertos}/${r.total}`, 'checagens corretas'],
+    [`${r.pct}%`, 'aproveitamento'],
+    [r.dicas, 'pistas usadas']
+  ].map(k => `<div class="report-kpi"><b>${esc(k[0])}</b><span>${esc(k[1])}</span></div>`).join('');
+  $('report-cases').innerHTML = state.historico.map(h => {
+    const card = cartaPorId(h.id);
+    if (!card) return '';
+    const resp = h.guess === null ? 'sem resposta (tempo)' : rotuloDe(h.guess);
+    const marca = h.guess === null ? 'warn' : (h.correto ? 'yes' : 'no');
+    const quem = r.solo ? '' : `<span class="pill">${esc(h.nome)}</span>`;
+    return `<div class="report-case">
+      <div class="review-icon">${visualHTML(card)}</div>
+      <div>
+        <h4>Imagem ${pad(h.caso, 2)} · ${esc(card.titulo)}</h4>
+        <div class="meta">${quem}
+          <span>respondeu</span><span class="pill ${marca}">${esc(resp)}</span>
+          <span>· correto:</span><span class="pill">${rotuloDe(card.alterada)}</span>
+          ${card.nivel ? `<span class="pill warn">nível ${esc(NIVEIS[card.nivel].toLowerCase())}</span>` : ''}
+          <span class="pill ${h.delta > 0 ? 'yes' : (h.delta < 0 ? 'no' : 'warn')}">${h.delta > 0 ? '+' : ''}${h.delta} pts</span>
+          ${h.dica ? '<span class="pill warn">usou pista</span>' : ''}
+        </div>
+        <p><em>“${esc(card.legenda)}”</em></p>
+        <p>${esc(card.revelacao)}</p>
+        ${card.credito ? `<p class="src">${esc(creditoRevelacao(card))}</p>` : ''}
+        <div class="src">${fontesHTML(card, false)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  showScreen('screen-report');
+}
+
+/* ====== Revisão da imagem anterior ====== */
+function refreshBackBtn() { $('back-btn').disabled = state.historico.length === 0; }
+function openReview() {
+  if (!state.historico.length) return;
+  const h = state.historico[state.historico.length - 1];
+  const card = cartaPorId(h.id);
+  $('review-case-id').textContent = `PAUTA #${pad(card.id, 3)} · IMAGEM ${pad(h.caso, 2)}`;
+  const correta = rotuloDe(card.alterada);
+  const resp = h.guess === null ? 'SEM RESPOSTA' : rotuloDe(h.guess);
+  const fontes = card.fontes.length ? `<div class="review-sources"><div class="review-sources-label">FONTES</div>${fontesHTML(card, false)}</div>` : '';
+  $('review-body').innerHTML = `
+    <div class="review-tag">${esc(h.nome.toUpperCase())} respondeu</div>
+    <div class="thumb-wide">${visualHTML(card)}</div>
+    <div class="review-product-name">${esc(card.titulo)}</div>
+    <div class="review-pitch">“${esc(card.legenda)}”</div>
+    <div class="review-answer-row">
+      Resposta: <span class="tag ${h.correto ? 'correct-mark' : 'wrong-mark'}">${resp}</span>
+      ${h.correto ? '· ✓ acertou' : '· ✗ correto era <span class="tag">' + correta + '</span>'}
+      <span class="tag ${h.delta > 0 ? 'correct-mark' : 'wrong-mark'}">${h.delta > 0 ? '+' : ''}${h.delta} pts</span>
+      ${h.dica ? '<span class="tag">com pista</span>' : ''}
+    </div>
+    <div class="review-explanation"><strong>Revelação:</strong> ${esc(card.revelacao)}</div>
+    ${fontes}`;
+  $('review-modal').classList.add('show');
+}
+function fecharModais() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show')); }
+function irParaInicio() {
+  fecharModais();
+  fecharLupa();
+  stopTimer();
+  document.body.classList.remove('modo-individual');
+  atualizarBotaoRetomar();
+  atualizarDicaRodape();
+  atualizarStatusBanco();
+  showScreen('screen-briefing');
+}
+
+/* ============================================================
+   LOGIN E PAINEL DO ADMINISTRADOR
+   ============================================================ */
+function msgHTML(texto, tipo) { return `<div class="notice ${tipo || ''}">${texto}</div>`; }
+const ERROS_AUTH = {
+  'auth/invalid-credential': 'Login ou senha incorretos.',
+  'auth/wrong-password': 'Login ou senha incorretos.',
+  'auth/user-not-found': 'Login ou senha incorretos.',
+  'auth/invalid-email': 'O login precisa ser um e-mail válido.',
+  'auth/missing-password': 'Digite a senha.',
+  'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+  'auth/network-request-failed': 'Sem conexão com a internet.',
+  'auth/user-disabled': 'Esta conta foi desativada.',
+  'auth/operation-not-allowed': 'O login por e-mail e senha não está ativado no Firebase (Authentication → Método de login).'
+};
+async function usuarioAtual() {
+  return new Promise(res => { const un = fb.U.onAuthStateChanged(fb.auth, u => { un(); res(u); }); });
+}
+/* Descobre o perfil da conta: administrador, professor ou sem permissão (null) */
+async function perfilDe(u) {
+  const F = fb.F;
+  if ((await F.getDoc(F.doc(fb.db, 'admins', u.uid))).exists()) return { email: u.email, uid: u.uid, papel: 'admin', turmas: [] };
+  const p = await F.getDoc(F.doc(fb.db, 'professores', u.uid));
+  if (p.exists()) {
+    const d = p.data() || {};
+    return { email: u.email, uid: u.uid, papel: 'professor', nome: String(d.nome || ''), turmas: Array.isArray(d.turmas) ? d.turmas.map(limparTurma).filter(Boolean) : [] };
+  }
+  return null;
+}
+async function abrirAreaProfessor() {
+  $('login-msg').innerHTML = '';
+  if (!firebaseConfigurado()) {
+    $('login-form').hidden = true;
+    $('login-demo').hidden = false;
+    $('login-msg').innerHTML = msgHTML('<strong>Firebase ainda não configurado.</strong> O login com senha passa a valer depois que você preencher o arquivo <code>firebase-config.js</code> (passo a passo no LEIA-ME). Enquanto isso, o painel abre em modo demonstração: as alterações ficam salvas só neste navegador e não chegam aos outros participantes.');
+    showScreen('screen-login');
+    return;
+  }
+  $('login-form').hidden = false;
+  $('login-demo').hidden = true;
+  showScreen('screen-login');
+  try {
+    await withTimeout(initFirebase(), 10000);
+    const u = await withTimeout(usuarioAtual(), 10000);
+    const perfil = u ? await perfilDe(u) : null;
+    if (perfil) { adminUser = perfil; abrirPainel(); }
+  } catch (e) {
+    $('login-msg').innerHTML = msgHTML('Não foi possível conectar ao Firebase. Verifique a internet e o arquivo <code>firebase-config.js</code>.', 'err');
+  }
+}
+async function fazerLogin(ev) {
+  ev.preventDefault();
+  const btn = $('btn-login');
+  btn.disabled = true;
+  $('login-msg').innerHTML = '';
+  try {
+    await withTimeout(initFirebase(), 10000);
+    const cred = await fb.U.signInWithEmailAndPassword(fb.auth, $('login-email').value.trim(), $('login-senha').value);
+    const perfil = await perfilDe(cred.user);
+    if (!perfil) {
+      const uid = cred.user.uid;
+      await fb.U.signOut(fb.auth);
+      $('login-msg').innerHTML = msgHTML(`Login correto, mas esta conta ainda não tem permissão. Se você é professor, peça ao administrador para cadastrar seu acesso. Se é o administrador, crie no Firestore um documento na coleção <code>admins</code> com o ID <code>${esc(uid)}</code> (passo 5 do LEIA-ME).`, 'err');
+      return;
+    }
+    adminUser = perfil;
+    $('login-senha').value = '';
+    abrirPainel();
+  } catch (e) {
+    console.warn('[Descubra] login', e);
+    $('login-msg').innerHTML = msgHTML(esc(ERROS_AUTH[e && e.code] || 'Não foi possível entrar. Verifique a conexão e a configuração do Firebase.'), 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function redefinirSenha() {
+  const email = $('login-email').value.trim();
+  if (!email) { $('login-msg').innerHTML = msgHTML('Digite o e-mail de login e clique de novo em “Esqueci a senha”.'); return; }
+  try {
+    await withTimeout(initFirebase(), 10000);
+    await fb.U.sendPasswordResetEmail(fb.auth, email);
+    $('login-msg').innerHTML = msgHTML('Se esse e-mail estiver cadastrado, você receberá um link para criar uma nova senha.', 'ok');
+  } catch (e) {
+    $('login-msg').innerHTML = msgHTML(esc(ERROS_AUTH[e && e.code] || 'Não foi possível enviar o e-mail de redefinição.'), 'err');
+  }
+}
+async function sair() {
+  try { if (fb && adminUser && !adminUser.demo) await fb.U.signOut(fb.auth); } catch (e) { /* segue */ }
+  adminUser = null;
+  irParaInicio();
+}
+function abrirPainel() {
+  const demo = !!adminUser.demo;
+  const prof = adminUser.papel === 'professor';
+  $('admin-title').textContent = prof ? 'Painel do professor' : 'Painel do administrador';
+  $('admin-sub').textContent = demo ? 'Modo demonstração · sem login'
+    : (prof ? `${adminUser.nome || adminUser.email} · ${adminUser.email} · turmas: ${adminUser.turmas.join(', ') || 'nenhuma'}` : `Conectado como ${adminUser.email}`);
+  document.querySelectorAll('.tab').forEach(t => { t.hidden = prof && t.dataset.tab !== 'resultados'; });
+  let banner = '';
+  if (prof) banner = adminUser.turmas.length ? '' : msgHTML('Seu acesso ainda não tem turmas vinculadas. Peça ao administrador para incluir os códigos das suas turmas.');
+  else if (demo) banner = msgHTML('<strong>Modo demonstração.</strong> As alterações ficam só neste navegador. Para publicar para todos os participantes, configure o Firebase ou exporte o banco na aba Backup.');
+  else if (origemBanco === 'padrao') banner = msgHTML('O banco online ainda não foi publicado: os participantes estão vendo as imagens de fábrica. <button class="btn small primary" id="btn-publicar" type="button">Publicar banco agora</button>');
+  $('admin-banner').innerHTML = banner;
+  const pub = $('btn-publicar');
+  if (pub) pub.addEventListener('click', () => salvarComAviso('Banco publicado. Já vale para todos os participantes.').then(ok => { if (ok) abrirPainel(); }));
+  abrirAba(prof ? 'resultados' : 'cartas');
+  showScreen('screen-admin');
+}
+async function salvarComAviso(msgOk) {
+  try {
+    await salvarBanco();
+    toast(msgOk || (adminUser && adminUser.demo ? 'Salvo neste navegador.' : 'Salvo e publicado.'));
+    return true;
+  } catch (e) {
+    console.warn('[Descubra] salvar', e);
+    const negado = e && (e.code === 'permission-denied' || /permission/i.test(e.message || ''));
+    toast(negado ? 'Sem permissão para salvar. Confira as regras do Firestore e a coleção admins.' : 'Não foi possível salvar. Verifique a conexão.', true);
+    return false;
+  }
+}
+function abrirAba(nome) {
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === nome)));
+  document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.id !== 'tab-' + nome; });
+  if (nome === 'cartas') renderCartas();
+  if (nome === 'perguntas') renderPerguntas(BANCO.perguntasFinais);
+  if (nome === 'config') renderConfig();
+  if (nome === 'resultados') carregarResultados();
+  if (nome === 'professores') carregarProfessores();
+}
+/* Botão de confirmação em dois cliques (sem caixas de diálogo do navegador) */
+function armar(btn, textoConfirmar, acao) {
+  if (btn.classList.contains('armed')) { btn.classList.remove('armed'); btn.textContent = btn.dataset.rotulo; acao(); return; }
+  btn.dataset.rotulo = btn.textContent;
+  btn.textContent = textoConfirmar;
+  btn.classList.add('armed');
+  setTimeout(() => { if (btn.classList.contains('armed')) { btn.classList.remove('armed'); btn.textContent = btn.dataset.rotulo; } }, 4000);
+}
+
+/* ---------- Aba: imagens e pistas ---------- */
+function renderCartas() {
+  const cs = BANCO.cartas;
+  const at = cs.filter(c => c.ativa);
+  $('cartas-stats').textContent = `${cs.length} imagens · ${at.length} ativas (${at.filter(c => !c.alterada).length} reais, ${at.filter(c => c.alterada).length} alteradas) · ${cs.filter(c => !c.dica.trim()).length} sem pista`;
+  $('cartas-tbody').innerHTML = cs.map(c => `
+    <tr class="${c.ativa ? '' : 'off'}">
+      <td>${pad(c.id, 3)}</td>
+      <td><div class="review-icon" style="width:60px;height:40px;font-size:20px">${visualHTML(c)}</div></td>
+      <td>${esc(c.titulo)}</td>
+      <td><span class="pill ${c.alterada ? 'no' : 'yes'}">${c.alterada ? 'ALTERADA' : 'REAL'}</span></td>
+      <td>${c.nivel ? esc(NIVEIS[c.nivel]) : '—'}</td>
+      <td>${c.dica.trim() ? '✓' : '—'}</td>
+      <td>${c.fontes.length}</td>
+      <td>${c.ativa ? 'ativa' : 'inativa'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn small" type="button" data-acao="editar" data-id="${c.id}">Editar</button>
+        <button class="btn small danger" type="button" data-acao="excluir" data-id="${c.id}">Excluir</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="9">Nenhuma imagem cadastrada.</td></tr>';
+}
+let cartaEmEdicao = null; // id ou null (novo)
+function fonteRowHTML(f) {
+  return `<div class="fonte-row">
+    <input class="inline-input" type="text" data-f="titulo" placeholder="Título da fonte" maxlength="160" value="${esc(f ? f.titulo : '')}">
+    <input class="inline-input" type="text" data-f="url" placeholder="https://…" maxlength="400" value="${esc(f ? f.url : '')}">
+    <button class="btn small danger" type="button" data-acao="rm-fonte">Remover</button>
+  </div>`;
+}
+function atualizarPreview() {
+  $('cf-preview').innerHTML = visualHTML({ image: $('cf-image').value, icon: $('cf-icon').value || '📰' });
+}
+function abrirEditor(id) {
+  const c = id == null ? null : cartaPorId(id);
+  cartaEmEdicao = c ? c.id : null;
+  $('card-modal-title').textContent = c ? 'Editar imagem' : 'Nova imagem';
+  $('card-modal-id').textContent = c ? `PAUTA #${pad(c.id, 3)}` : 'NOVA PAUTA';
+  $('card-form-msg').innerHTML = '';
+  $('cf-titulo').value = c ? c.titulo : '';
+  $('cf-alterada').value = String(c ? c.alterada : false);
+  $('cf-credito').value = c ? c.credito : '';
+  $('cf-original').value = c ? c.original : '';
+  $('cf-nivel').value = c ? c.nivel : '';
+  $('cf-image').value = c ? c.image : '';
+  $('cf-icon').value = c ? c.icon : '';
+  $('cf-pitch').value = c ? c.legenda : '';
+  $('cf-dica').value = c ? c.dica : '';
+  $('cf-revelacao').value = c ? c.revelacao : '';
+  $('cf-ativa').checked = c ? c.ativa : true;
+  $('cf-fontes').innerHTML = (c ? c.fontes : []).map(fonteRowHTML).join('');
+  atualizarPreview();
+  $('card-modal').classList.add('show');
+  $('cf-titulo').focus();
+}
+async function salvarCarta(ev) {
+  ev.preventDefault();
+  const titulo = $('cf-titulo').value.trim();
+  const legenda = $('cf-pitch').value.trim();
+  const revelacao = $('cf-revelacao').value.trim();
+  if (!titulo || !legenda || !revelacao) { $('card-form-msg').innerHTML = msgHTML('Preencha título, legenda e revelação.', 'err'); return; }
+  const image = $('cf-image').value.trim();
+  const alterada = $('cf-alterada').value === 'true';
+  const original = alterada ? $('cf-original').value.trim() : '';
+  if ((image && !safeImg(image)) || (original && !safeImg(original))) { $('card-form-msg').innerHTML = msgHTML('Imagem inválida. Use um caminho relativo como <code>img/arquivo.jpg</code> ou um endereço que comece com https://.', 'err'); return; }
+  const fontes = [];
+  let urlRuim = false;
+  $('cf-fontes').querySelectorAll('.fonte-row').forEach(row => {
+    const titulo = row.querySelector('[data-f="titulo"]').value.trim();
+    const url = row.querySelector('[data-f="url"]').value.trim();
+    if (!titulo && !url) return;
+    if (url && !safeUrl(url)) urlRuim = true;
+    fontes.push({ titulo: titulo || url, url });
+  });
+  if (urlRuim) { $('card-form-msg').innerHTML = msgHTML('Os links das fontes precisam começar com http:// ou https://.', 'err'); return; }
+  const dados = { titulo, legenda, revelacao, image, icon: $('cf-icon').value.trim() || '📰', credito: $('cf-credito').value.trim(), alterada, nivel: alterada ? $('cf-nivel').value : '', original, dica: $('cf-dica').value.trim(), fontes, ativa: $('cf-ativa').checked };
+  const antes = JSON.stringify(BANCO.cartas);
+  if (cartaEmEdicao == null) {
+    const id = BANCO.cartas.reduce((m, c) => Math.max(m, c.id), 0) + 1;
+    BANCO.cartas.push(Object.assign({ id }, dados));
+  } else {
+    Object.assign(cartaPorId(cartaEmEdicao), dados);
+  }
+  $('btn-card-save').disabled = true;
+  const ok = await salvarComAviso();
+  $('btn-card-save').disabled = false;
+  if (!ok) { BANCO.cartas = JSON.parse(antes); return; }
+  $('card-modal').classList.remove('show');
+  renderCartas();
+}
+async function excluirCarta(id) {
+  const antes = JSON.stringify(BANCO.cartas);
+  BANCO.cartas = BANCO.cartas.filter(c => c.id !== id);
+  if (!(await salvarComAviso('Imagem excluída.'))) BANCO.cartas = JSON.parse(antes);
+  renderCartas();
+}
+
+/* ---------- Aba: perguntas finais ---------- */
+function renderPerguntas(lista) {
+  $('perguntas-list').innerHTML = lista.map(q => `<div class="q-row">
+    <textarea class="inline-input" rows="2" maxlength="400">${esc(q)}</textarea>
+    <button class="btn small danger" type="button" data-acao="rm-pergunta">Remover</button></div>`).join('');
+}
+function lerPerguntas() { return [...$('perguntas-list').querySelectorAll('textarea')].map(t => t.value.trim()).filter(Boolean); }
+async function salvarPerguntas() {
+  const antes = BANCO.perguntasFinais;
+  BANCO.perguntasFinais = lerPerguntas();
+  if (!(await salvarComAviso())) BANCO.perguntasFinais = antes;
+  renderPerguntas(BANCO.perguntasFinais);
+}
+
+/* ---------- Aba: regras ---------- */
+function renderConfig() { Object.keys(CONFIG_PADRAO).forEach(k => { $('cfg-' + k).value = String(BANCO.config[k]); }); }
+async function salvarConfig() {
+  const antes = BANCO.config;
+  const novo = {};
+  Object.keys(CONFIG_PADRAO).forEach(k => { novo[k] = Number($('cfg-' + k).value); });
+  BANCO = normalizarBanco(Object.assign({}, BANCO, { config: novo }));
+  if (!(await salvarComAviso())) BANCO.config = antes;
+  renderConfig();
+}
+
+/* ---------- Aba: resultados ---------- */
+let resultados = [];
+function resultadosFiltrados() {
+  const f = limparTurma($('res-filtro').value);
+  return f ? resultados.filter(r => String(r.turma || '').includes(f)) : resultados;
+}
+function renderResultados() {
+  const lista = resultadosFiltrados();
+  const tot = lista.reduce((s, r) => s + (Number(r.total) || 0), 0);
+  const ac = lista.reduce((s, r) => s + (Number(r.acertos) || 0), 0);
+  $('res-stats').textContent = lista.length
+    ? `${lista.length} registro(s) · aproveitamento médio ${tot ? Math.round(100 * ac / tot) : 0}% · ${new Set(lista.map(r => r.turma)).size} turma(s)`
+    : (adminUser && adminUser.papel === 'professor'
+      ? 'Nenhum resultado nas suas turmas ainda. Os registros aparecem quando os estudantes informam o código da turma na tela inicial.'
+      : 'Nenhum resultado registrado. Os registros aparecem quando o participante informa um código de turma.');
+  $('res-tbody').innerHTML = lista.map(r => `<tr>
+      <td style="white-space:nowrap">${r.criadoEm ? esc(r.criadoEm.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })) : '—'}</td>
+      <td>${esc(r.turma)}</td>
+      <td>${r.modo === 'equipes' ? 'equipes' : 'individual'}</td>
+      <td>${esc(r.participante)}</td>
+      <td>${esc(r.pontos)}</td>
+      <td>${esc(r.acertos)}/${esc(r.total)}</td>
+      <td>${esc(r.dicas)}</td>
+      <td>${adminUser && adminUser.papel === 'professor' ? '' : `<button class="btn small danger" type="button" data-acao="rm-resultado" data-id="${esc(r.id)}">Excluir</button>`}</td>
+    </tr>`).join('');
+}
+async function carregarResultados() {
+  $('res-stats').textContent = 'Carregando…';
+  $('res-tbody').innerHTML = '';
+  try { resultados = await listarResultados(); renderResultados(); }
+  catch (e) { console.warn('[Descubra] resultados', e); $('res-stats').textContent = 'Não foi possível carregar os resultados (conexão ou permissão).'; }
+}
+function baixar(nome, conteudo, tipo) {
+  const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  const a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportarCSV() {
+  const lista = resultadosFiltrados();
+  if (!lista.length) { toast('Não há resultados para exportar.', true); return; }
+  const cel = v => '"' + String(v == null ? '' : v).replace(/"/g, '""').replace(/^([=+\-@])/, "'$1") + '"';
+  const linhas = [['data', 'turma', 'modo', 'participante', 'pontos', 'acertos', 'total', 'pistas'].join(';')];
+  lista.forEach(r => linhas.push([r.criadoEm ? r.criadoEm.toLocaleString('pt-BR') : '', r.turma, r.modo, r.participante, r.pontos, r.acertos, r.total, r.dicas].map(cel).join(';')));
+  baixar('descubra-a-verdade-resultados.csv', '﻿' + linhas.join('\r\n'), 'text/csv;charset=utf-8');
+}
+
+/* ---------- Aba: professores ---------- */
+let professores = [];
+let profEmEdicao = null; // uid ou null (novo)
+function lerTurmas(txt) { return [...new Set(String(txt || '').split(/[,;\s]+/).map(limparTurma).filter(Boolean))].slice(0, 20); }
+function online() { return !!(fb && adminUser && !adminUser.demo); }
+function prepararFormProfessor(p) {
+  profEmEdicao = p ? p.uid : null;
+  $('prof-form-title').textContent = p ? `Editar ${p.nome || p.email}` : 'Novo professor';
+  $('pf-nome').value = p ? (p.nome || '') : '';
+  $('pf-turmas').value = p ? (p.turmas || []).join(', ') : '';
+  $('pf-email').value = ''; $('pf-senha').value = '';
+  $('pf-email-wrap').hidden = !!p; $('pf-senha-wrap').hidden = !!p;
+  $('btn-prof-save').textContent = p ? 'Salvar alterações' : 'Cadastrar professor';
+  $('btn-prof-cancel').hidden = !p;
+}
+function renderProfessores() {
+  $('prof-tbody').innerHTML = professores.map(p => `<tr>
+      <td>${esc(p.nome)}</td><td>${esc(p.email)}</td><td>${esc((p.turmas || []).join(', '))}</td>
+      <td style="white-space:nowrap">
+        <button class="btn small" type="button" data-acao="editar-prof" data-id="${esc(p.uid)}">Editar</button>
+        <button class="btn small danger" type="button" data-acao="rm-prof" data-id="${esc(p.uid)}">Remover acesso</button>
+      </td></tr>`).join('') || '<tr><td colspan="4">Nenhum professor cadastrado.</td></tr>';
+}
+async function carregarProfessores() {
+  prepararFormProfessor(null);
+  $('prof-msg').innerHTML = '';
+  $('prof-form').hidden = !online();
+  $('prof-form-title').hidden = !online();
+  if (!online()) {
+    professores = []; renderProfessores();
+    $('prof-msg').innerHTML = msgHTML('O cadastro de professores depende do Firebase (login com senha). No modo demonstração ele fica desativado.');
+    return;
+  }
+  try {
+    const snap = await fb.F.getDocs(fb.F.collection(fb.db, 'professores'));
+    professores = snap.docs.map(d => Object.assign({ uid: d.id }, d.data())).sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+    renderProfessores();
+  } catch (e) {
+    console.warn('[Descubra] professores', e);
+    $('prof-msg').innerHTML = msgHTML('Não foi possível carregar a lista de professores (conexão ou regras do Firestore).', 'err');
+  }
+}
+/* Cria a conta do professor em uma instância separada, para não derrubar a sessão do administrador */
+async function criarContaProfessor(email, senha) {
+  const app2 = fb.A.initializeApp(window.DV_FIREBASE, 'cadastro-' + Date.now());
+  try {
+    const auth2 = fb.U.getAuth(app2);
+    const cred = await fb.U.createUserWithEmailAndPassword(auth2, email, senha);
+    const uid = cred.user.uid;
+    await fb.U.signOut(auth2);
+    return uid;
+  } finally {
+    try { await fb.A.deleteApp(app2); } catch (e) { /* segue */ }
+  }
+}
+async function salvarProfessor(ev) {
+  ev.preventDefault();
+  const nome = $('pf-nome').value.trim();
+  const turmas = lerTurmas($('pf-turmas').value);
+  if (!nome || !turmas.length) { $('prof-msg').innerHTML = msgHTML('Informe o nome e pelo menos um código de turma.', 'err'); return; }
+  const btn = $('btn-prof-save');
+  btn.disabled = true;
+  $('prof-msg').innerHTML = '';
+  try {
+    if (profEmEdicao) {
+      const atual = professores.find(p => p.uid === profEmEdicao) || {};
+      await fb.F.setDoc(fb.F.doc(fb.db, 'professores', profEmEdicao), { nome, email: atual.email || '', turmas });
+      toast('Professor atualizado.');
+    } else {
+      const email = $('pf-email').value.trim();
+      const senha = $('pf-senha').value;
+      if (!email || senha.length < 6) { $('prof-msg').innerHTML = msgHTML('Informe o e-mail e uma senha provisória com pelo menos 6 caracteres.', 'err'); return; }
+      const uid = await criarContaProfessor(email, senha);
+      await fb.F.setDoc(fb.F.doc(fb.db, 'professores', uid), { nome, email, turmas });
+      toast('Professor cadastrado.');
+    }
+    await carregarProfessores();
+  } catch (e) {
+    console.warn('[Descubra] professor', e);
+    const msgs = {
+      'auth/email-already-in-use': 'Já existe uma conta com esse e-mail. Para recadastrar, exclua a conta em Authentication, no console do Firebase.',
+      'auth/weak-password': 'Senha fraca: use pelo menos 6 caracteres.',
+      'auth/invalid-email': 'E-mail inválido.',
+      'auth/operation-not-allowed': 'A criação de contas está desativada no Firebase (Authentication → Configurações → Ações do usuário).',
+      'auth/admin-restricted-operation': 'A criação de contas está desativada no Firebase (Authentication → Configurações → Ações do usuário).',
+      'permission-denied': 'Sem permissão para salvar. Confira as regras do Firestore.'
+    };
+    $('prof-msg').innerHTML = msgHTML(esc(msgs[e && e.code] || 'Não foi possível salvar o professor. Verifique a conexão.'), 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function removerProfessor(uid) {
+  try {
+    await fb.F.deleteDoc(fb.F.doc(fb.db, 'professores', uid));
+    toast('Acesso removido.');
+    await carregarProfessores();
+  } catch (e) { toast('Não foi possível remover.', true); }
+}
+
+/* ---------- Aba: backup ---------- */
+function exportarBanco() {
+  baixar(`descubra-a-verdade-banco-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(BANCO, null, 2), 'application/json');
+}
+function importarBanco(file) {
+  const leitor = new FileReader();
+  leitor.onload = async () => {
+    let dados;
+    try { dados = JSON.parse(String(leitor.result)); } catch (e) { toast('Arquivo inválido: não é um JSON.', true); return; }
+    if (!dados || !Array.isArray(dados.cartas) || !dados.cartas.length) { toast('Arquivo inválido: não encontrei a lista de imagens.', true); return; }
+    const antes = BANCO;
+    BANCO = normalizarBanco(dados);
+    if (await salvarComAviso(`Banco importado: ${BANCO.cartas.length} imagens.`)) abrirAba('cartas'); else BANCO = antes;
+    $('file-import').value = '';
+  };
+  leitor.readAsText(file);
+}
+async function restaurarPadrao() {
+  const antes = BANCO;
+  BANCO = normalizarBanco(null);
+  if (await salvarComAviso('Banco padrão restaurado.')) abrirAba('cartas'); else BANCO = antes;
+}
+
+/* ============================================================
+   LIGAÇÕES DE EVENTOS E INICIALIZAÇÃO
+   ============================================================ */
+function ligarEventos() {
+  $('mode-individual').addEventListener('click', () => selecionarModo('individual'));
+  $('mode-equipes').addEventListener('click', () => selecionarModo('equipes'));
+  $('btn-start').addEventListener('click', startGame);
+  $('btn-resume').addEventListener('click', retomarPartida);
+  $('btn-area-prof').addEventListener('click', abrirAreaProfessor);
+
+  $('btn-home').addEventListener('click', () => $('home-modal').classList.add('show'));
+  $('btn-home-stay').addEventListener('click', fecharModais);
+  $('btn-home-go').addEventListener('click', irParaInicio);
+  $('back-btn').addEventListener('click', openReview);
+  $('btn-close-review').addEventListener('click', fecharModais);
+  $('hint-btn').addEventListener('click', pedirPista);
+  $('btn-real').addEventListener('click', () => answer(false));
+  $('btn-alterada').addEventListener('click', () => answer(true));
+
+  /* Lupa: imagem em verificação, imagens da revelação e comparação */
+  $('product-visual').addEventListener('click', () => {
+    const card = cartaPorId(state.deck[state.idx]);
+    if (card) abrirLupa(itensLupa(card, false), 0);
+  });
+  $('reveal-media').addEventListener('click', e => {
+    const b = e.target.closest('[data-lupa]');
+    if (!b) return;
+    const card = cartaPorId(Number(b.dataset.id));
+    if (card) abrirLupa(itensLupa(card, true), Number(b.dataset.lupa));
+  });
+  $('lb-close').addEventListener('click', fecharLupa);
+  $('lb-toggle').addEventListener('click', alternarLupa);
+  $('lb-stage').addEventListener('click', () => { if (lupa.itens.length > 1) alternarLupa(); else fecharLupa(); });
+  $('next-btn').addEventListener('click', nextCard);
+
+  $('btn-report').addEventListener('click', abrirRelatorio);
+  $('btn-restart').addEventListener('click', irParaInicio);
+  $('btn-print').addEventListener('click', () => window.print());
+  $('btn-report-back').addEventListener('click', () => showScreen('screen-closed'));
+
+  $('login-form').addEventListener('submit', fazerLogin);
+  $('btn-reset-senha').addEventListener('click', redefinirSenha);
+  $('btn-login-back').addEventListener('click', irParaInicio);
+  $('btn-login-back2').addEventListener('click', irParaInicio);
+  $('btn-demo').addEventListener('click', () => { adminUser = { demo: true, papel: 'admin', turmas: [] }; abrirPainel(); });
+  $('btn-logout').addEventListener('click', sair);
+  $('btn-admin-jogar').addEventListener('click', irParaInicio);
+
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => abrirAba(t.dataset.tab)));
+  $('btn-nova-carta').addEventListener('click', () => abrirEditor(null));
+  $('cartas-tbody').addEventListener('click', e => {
+    const b = e.target.closest('button[data-acao]');
+    if (!b) return;
+    const id = Number(b.dataset.id);
+    if (b.dataset.acao === 'editar') abrirEditor(id);
+    if (b.dataset.acao === 'excluir') armar(b, 'Confirmar?', () => excluirCarta(id));
+  });
+  $('card-form').addEventListener('submit', salvarCarta);
+  $('btn-card-cancel').addEventListener('click', fecharModais);
+  $('btn-add-fonte').addEventListener('click', () => $('cf-fontes').insertAdjacentHTML('beforeend', fonteRowHTML(null)));
+  $('cf-fontes').addEventListener('click', e => { const b = e.target.closest('[data-acao="rm-fonte"]'); if (b) b.closest('.fonte-row').remove(); });
+  $('cf-image').addEventListener('input', atualizarPreview);
+  $('cf-icon').addEventListener('input', atualizarPreview);
+
+  $('btn-add-pergunta').addEventListener('click', () => renderPerguntas(lerPerguntas().concat([''])));
+  $('perguntas-list').addEventListener('click', e => { const b = e.target.closest('[data-acao="rm-pergunta"]'); if (b) b.closest('.q-row').remove(); });
+  $('btn-save-perguntas').addEventListener('click', salvarPerguntas);
+  $('btn-save-config').addEventListener('click', salvarConfig);
+
+  $('btn-res-atualizar').addEventListener('click', carregarResultados);
+  $('btn-res-csv').addEventListener('click', exportarCSV);
+  $('res-filtro').addEventListener('input', renderResultados);
+  $('res-tbody').addEventListener('click', e => {
+    const b = e.target.closest('[data-acao="rm-resultado"]');
+    if (!b) return;
+    armar(b, 'Confirmar?', async () => {
+      try { await apagarResultado(b.dataset.id); resultados = resultados.filter(r => r.id !== b.dataset.id); renderResultados(); toast('Registro excluído.'); }
+      catch (err) { toast('Não foi possível excluir.', true); }
+    });
+  });
+  $('prof-form').addEventListener('submit', salvarProfessor);
+  $('btn-prof-cancel').addEventListener('click', () => prepararFormProfessor(null));
+  $('prof-tbody').addEventListener('click', e => {
+    const b = e.target.closest('button[data-acao]');
+    if (!b) return;
+    if (b.dataset.acao === 'editar-prof') prepararFormProfessor(professores.find(p => p.uid === b.dataset.id));
+    if (b.dataset.acao === 'rm-prof') armar(b, 'Confirmar?', () => removerProfessor(b.dataset.id));
+  });
+  $('btn-export').addEventListener('click', exportarBanco);
+  $('file-import').addEventListener('change', e => { if (e.target.files && e.target.files[0]) importarBanco(e.target.files[0]); });
+  $('btn-restaurar').addEventListener('click', e => armar(e.currentTarget, 'Confirmar restauração?', restaurarPadrao));
+
+  /* Fechar modais: clique fora (exceto o editor, para não perder texto) e tecla Esc */
+  document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m && m.id !== 'card-modal') m.classList.remove('show'); }));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { if (lupaAberta()) fecharLupa(); else fecharModais(); }
+    if (lupaAberta() && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === ' ')) { e.preventDefault(); alternarLupa(); }
+  });
+}
+
+async function iniciar() {
+  ligarEventos();
+  const prefs = lsGet(LS.prefs) || {};
+  selecionarModo(prefs.modo === 'equipes' ? 'equipes' : 'individual');
+  if (prefs.turma) $('input-turma').value = limparTurma(prefs.turma);
+  await carregarBanco();
+  $('select-tempo').value = String(TEMPOS.includes(prefs.tempo) ? prefs.tempo : cfg().tempoPadrao);
+  atualizarDicaRodape();
+  atualizarStatusBanco();
+  atualizarBotaoRetomar();
+  const b = $('btn-start');
+  b.disabled = false;
+  b.textContent = 'Iniciar checagem';
+}
+iniciar();
+</script>
+</body>
+</html>

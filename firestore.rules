@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Administrador: está logado E tem um documento em /admins/{uid}
+    function ehAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Professor: está logado E tem um documento em /professores/{uid}
+    function ehProfessor() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/professores/$(request.auth.uid));
+    }
+    function turmasDoProfessor() {
+      return get(/databases/$(database)/documents/professores/$(request.auth.uid)).data.turmas;
+    }
+
+    // Banco de imagens: qualquer participante lê; só administrador altera
+    match /conteudo/{documento} {
+      allow read: if true;
+      allow write: if ehAdmin();
+    }
+
+    // Lista de administradores: cada conta só consegue consultar a si mesma.
+    // Ninguém cria ou altera por aqui; isso é feito no console do Firebase.
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
+    // Professores: o administrador cadastra, edita e remove.
+    // Cada professor só consegue consultar o próprio cadastro.
+    match /professores/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || ehAdmin());
+      allow list, write: if ehAdmin();
+    }
+
+    // Resultados: o participante só consegue CRIAR um registro, no formato exato.
+    // Administrador lê e exclui tudo; professor lê apenas as próprias turmas.
+    match /resultados/{id} {
+      allow create: if request.resource.data.keys().hasOnly(
+            ['modo', 'participante', 'turma', 'pontos', 'acertos', 'total', 'dicas', 'criadoEm'])
+        && request.resource.data.keys().hasAll(
+            ['modo', 'participante', 'turma', 'pontos', 'acertos', 'total', 'dicas', 'criadoEm'])
+        && request.resource.data.modo in ['individual', 'equipes']
+        && request.resource.data.participante is string
+        && request.resource.data.participante.size() <= 60
+        && request.resource.data.turma is string
+        && request.resource.data.turma.size() > 0
+        && request.resource.data.turma.size() <= 20
+        && request.resource.data.pontos is string
+        && request.resource.data.pontos.size() <= 30
+        && request.resource.data.acertos is int
+        && request.resource.data.total is int
+        && request.resource.data.total <= 200
+        && request.resource.data.dicas is int
+        && request.resource.data.criadoEm == request.time;
+      allow read: if ehAdmin()
+        || (ehProfessor() && resource.data.turma in turmasDoProfessor());
+      allow delete: if ehAdmin();
+      allow update: if false;
+    }
+  }
+}
